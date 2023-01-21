@@ -28,10 +28,6 @@ export interface Payload {
    */
   first?: string
   /**
-   * The constituent's gender.
-   */
-  gender?: string
-  /**
    * The constituent's income.
    */
   income?: string

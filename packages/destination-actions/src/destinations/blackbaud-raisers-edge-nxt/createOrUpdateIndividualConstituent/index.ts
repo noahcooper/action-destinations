@@ -46,6 +46,73 @@ const action: ActionDefinition<Settings, Payload> = {
           label: 'Address Type',
           type: 'string'
         }
+      },
+      default: {
+        address_lines: {
+          '@if': {
+            exists: {
+              '@path': '$.traits.address.street'
+            },
+            then: {
+              '@path': '$.traits.address.street'
+            },
+            else: {
+              '@path': '$.properties.address.street'
+            }
+          }
+        },
+        city: {
+          '@if': {
+            exists: {
+              '@path': '$.traits.address.city'
+            },
+            then: {
+              '@path': '$.traits.address.city'
+            },
+            else: {
+              '@path': '$.properties.address.city'
+            }
+          }
+        },
+        country: {
+          '@if': {
+            exists: {
+              '@path': '$.traits.address.country'
+            },
+            then: {
+              '@path': '$.traits.address.country'
+            },
+            else: {
+              '@path': '$.properties.address.country'
+            }
+          }
+        },
+        postal_code: {
+          '@if': {
+            exists: {
+              '@path': '$.traits.address.postal_code'
+            },
+            then: {
+              '@path': '$.traits.address.postal_code'
+            },
+            else: {
+              '@path': '$.properties.address.postal_code'
+            }
+          }
+        },
+        state: {
+          '@if': {
+            exists: {
+              '@path': '$.traits.address.state'
+            },
+            then: {
+              '@path': '$.traits.address.state'
+            },
+            else: {
+              '@path': '$.properties.address.state'
+            }
+          }
+        }
       }
     },
     // TODO: birthdate
@@ -70,6 +137,21 @@ const action: ActionDefinition<Settings, Payload> = {
           label: 'Email Type',
           type: 'string'
         }
+      },
+      default: {
+        address: {
+          '@if': {
+            exists: {
+              '@path': '$.traits.email'
+            },
+            then: {
+              '@path': '$.traits.email'
+            },
+            else: {
+              '@path': '$.properties.email'
+            }
+          }
+        }
       }
     },
     first: {
@@ -90,24 +172,7 @@ const action: ActionDefinition<Settings, Payload> = {
         }
       }
     },
-    gender: {
-      label: 'Gender',
-      description: "The constituent's gender.",
-      type: 'string',
-      default: {
-        '@if': {
-          exists: {
-            '@path': '$.traits.gender'
-          },
-          then: {
-            '@path': '$.traits.gender'
-          },
-          else: {
-            '@path': '$.properties.gender'
-          }
-        }
-      }
-    },
+    // TODO: gender
     income: {
       label: 'Income',
       description: "The constituent's income.",
@@ -153,6 +218,21 @@ const action: ActionDefinition<Settings, Payload> = {
           label: 'Online Presence Type',
           type: 'string'
         }
+      },
+      default: {
+        address: {
+          '@if': {
+            exists: {
+              '@path': '$.traits.website'
+            },
+            then: {
+              '@path': '$.traits.website'
+            },
+            else: {
+              '@path': '$.properties.website'
+            }
+          }
+        }
       }
     },
     phone: {
@@ -175,6 +255,21 @@ const action: ActionDefinition<Settings, Payload> = {
         type: {
           label: 'Phone Type',
           type: 'string'
+        }
+      },
+      default: {
+        number: {
+          '@if': {
+            exists: {
+              '@path': '$.traits.phone'
+            },
+            then: {
+              '@path': '$.traits.phone'
+            },
+            else: {
+              '@path': '$.properties.phone'
+            }
+          }
         }
       }
     }
@@ -206,37 +301,40 @@ const action: ActionDefinition<Settings, Payload> = {
     const constituentData = {
       type: 'Individual'
     }
-    const constituentFields = ['first', 'gender', 'income', 'last', 'lookup_id']
-    constituentFields.forEach((key) => {
+    const simpleConstituentFields = ['first', 'income', 'last', 'lookup_id']
+    simpleConstituentFields.forEach((key) => {
       if (payload[key] !== undefined) {
         constituentData[key] = payload[key]
       }
     })
+    // TODO: birthdate
+    // TODO: gender
     let constituentAddressData = undefined
     if (
-      (payload.address?.address_lines ||
-        payload.address?.city ||
-        payload.address?.country ||
-        payload.address?.postal_code ||
-        payload.address?.state) &&
-      payload.address?.type
+      payload.address &&
+      (payload.address.address_lines ||
+        payload.address.city ||
+        payload.address.country ||
+        payload.address.postal_code ||
+        payload.address.state) &&
+      payload.address.type
     ) {
       constituentAddressData = payload.address
     }
     let constituentEmailData = undefined
-    if (payload.email?.address && payload.email?.type) {
+    if (payload.email && payload.email.address && payload.email.type) {
       constituentEmailData = payload.email
     }
     let constituentOnlinePresenceData = undefined
-    if (payload.online_presence?.address && payload.online_presence?.type) {
+    if (payload.online_presence && payload.online_presence.address && payload.online_presence.type) {
       constituentOnlinePresenceData = payload.online_presence
     }
     let constituentPhoneData = undefined
-    if (payload.phone?.number && payload.phone?.type) {
+    if (payload.phone && payload.phone.number && payload.phone.type) {
       constituentPhoneData = payload.phone
     }
     if (!constituentId) {
-      if (!payload.last) {
+      if (!constituentData.last) {
         throw new IntegrationError('Missing last name value', 'MISSING_REQUIRED_FIELD', 400)
       } else {
         if (constituentAddressData) {
