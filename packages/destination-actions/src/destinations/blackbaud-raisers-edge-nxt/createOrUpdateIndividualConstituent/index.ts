@@ -1,8 +1,7 @@
 import { ActionDefinition, IntegrationError } from '@segment/actions-core'
 import type { Settings } from '../generated-types'
 import type { Payload } from './generated-types'
-
-const apiBaseUrl = 'https://api.sky.blackbaud.com/constituent/v1/'
+import { SKY_API_BASE_URL } from '../constants'
 
 const action: ActionDefinition<Settings, Payload> = {
   title: 'Create or Update Individual Constituent',
@@ -284,7 +283,7 @@ const action: ActionDefinition<Settings, Payload> = {
         searchText = payload.lookup_id
       }
       const constituentSearchResponse = await request(
-        `${apiBaseUrl}constituents/search?search_field=${searchField}&search_text=${searchText}`,
+        `${SKY_API_BASE_URL}/constituents/search?search_field=${searchField}&search_text=${searchText}`,
         {
           method: 'get'
         }
@@ -349,19 +348,19 @@ const action: ActionDefinition<Settings, Payload> = {
         if (constituentPhoneData) {
           constituentData.phone = constituentPhoneData
         }
-        await request(`${apiBaseUrl}constituents`, {
+        await request(`${SKY_API_BASE_URL}/constituents`, {
           method: 'post',
           json: constituentData
         })
       }
     } else {
-      await request(`${apiBaseUrl}constituents/${constituentId}`, {
+      await request(`${SKY_API_BASE_URL}/constituents/${constituentId}`, {
         method: 'patch',
         json: constituentData
       })
       if (constituentAddressData) {
         const constituentAddressListResponse = await request(
-          `${apiBaseUrl}constituents/${constituentId}/addresses?include_inactive=true`,
+          `${SKY_API_BASE_URL}/constituents/${constituentId}/addresses?include_inactive=true`,
           {
             method: 'get'
           }
@@ -380,7 +379,7 @@ const action: ActionDefinition<Settings, Payload> = {
           })
         }
         if (!existingAddress) {
-          await request(`${apiBaseUrl}addresses`, {
+          await request(`${SKY_API_BASE_URL}/addresses`, {
             method: 'post',
             json: {
               ...constituentAddressData,
@@ -397,7 +396,7 @@ const action: ActionDefinition<Settings, Payload> = {
             constituentAddressData.primary !== existingAddress.primary ||
             constituentAddressData.type !== existingAddress.type
           ) {
-            await request(`${apiBaseUrl}addresses/${existingAddress.id}`, {
+            await request(`${SKY_API_BASE_URL}/addresses/${existingAddress.id}`, {
               method: 'patch',
               json: {
                 ...constituentAddressData,
@@ -409,7 +408,7 @@ const action: ActionDefinition<Settings, Payload> = {
       }
       if (constituentEmailData) {
         const constituentEmailListResponse = await request(
-          `${apiBaseUrl}constituents/${constituentId}/emailaddresses?include_inactive=true`,
+          `${SKY_API_BASE_URL}/constituents/${constituentId}/emailaddresses?include_inactive=true`,
           {
             method: 'get'
           }
@@ -422,7 +421,7 @@ const action: ActionDefinition<Settings, Payload> = {
           })
         }
         if (!existingEmail) {
-          await request(`${apiBaseUrl}emailaddresses`, {
+          await request(`${SKY_API_BASE_URL}/emailaddresses`, {
             method: 'post',
             json: {
               ...constituentEmailData,
@@ -439,7 +438,7 @@ const action: ActionDefinition<Settings, Payload> = {
             constituentEmailData.primary !== existingEmail.primary ||
             constituentEmailData.type !== existingEmail.type
           ) {
-            await request(`${apiBaseUrl}emailaddresses/${existingEmail.id}`, {
+            await request(`${SKY_API_BASE_URL}/emailaddresses/${existingEmail.id}`, {
               method: 'patch',
               json: {
                 ...constituentEmailData,
@@ -451,7 +450,7 @@ const action: ActionDefinition<Settings, Payload> = {
       }
       if (constituentOnlinePresenceData) {
         const constituentOnlinePresenceListResponse = await request(
-          `${apiBaseUrl}constituents/${constituentId}/onlinepresences?include_inactive=true`,
+          `${SKY_API_BASE_URL}/constituents/${constituentId}/onlinepresences?include_inactive=true`,
           {
             method: 'get'
           }
@@ -464,7 +463,7 @@ const action: ActionDefinition<Settings, Payload> = {
           })
         }
         if (!existingOnlinePresence) {
-          await request(`${apiBaseUrl}onlinepresences`, {
+          await request(`${SKY_API_BASE_URL}/onlinepresences`, {
             method: 'post',
             json: {
               ...constituentOnlinePresenceData,
@@ -480,7 +479,7 @@ const action: ActionDefinition<Settings, Payload> = {
             constituentOnlinePresenceData.primary !== existingOnlinePresence.primary ||
             constituentOnlinePresenceData.type !== existingOnlinePresence.type
           ) {
-            await request(`${apiBaseUrl}onlinepresences/${existingOnlinePresence.id}`, {
+            await request(`${SKY_API_BASE_URL}/onlinepresences/${existingOnlinePresence.id}`, {
               method: 'patch',
               json: {
                 ...constituentOnlinePresenceData,
@@ -492,7 +491,7 @@ const action: ActionDefinition<Settings, Payload> = {
       }
       if (constituentPhoneData) {
         const constituentPhoneListResponse = await request(
-          `${apiBaseUrl}constituents/${constituentId}/phones?include_inactive=true`,
+          `${SKY_API_BASE_URL}/constituents/${constituentId}/phones?include_inactive=true`,
           {
             method: 'get'
           }
@@ -505,7 +504,7 @@ const action: ActionDefinition<Settings, Payload> = {
           })
         }
         if (!existingPhone) {
-          await request(`${apiBaseUrl}phones`, {
+          await request(`${SKY_API_BASE_URL}/phones`, {
             method: 'post',
             json: {
               ...constituentPhoneData,
@@ -522,7 +521,7 @@ const action: ActionDefinition<Settings, Payload> = {
             constituentPhoneData.primary !== existingPhone.primary ||
             constituentPhoneData.type !== existingPhone.type
           ) {
-            await request(`${apiBaseUrl}phones/${existingPhone.id}`, {
+            await request(`${SKY_API_BASE_URL}/phones/${existingPhone.id}`, {
               method: 'patch',
               json: {
                 ...constituentPhoneData,
