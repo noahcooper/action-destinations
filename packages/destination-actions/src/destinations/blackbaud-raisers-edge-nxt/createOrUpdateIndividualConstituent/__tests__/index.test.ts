@@ -84,7 +84,7 @@ describe('BlackbaudRaisersEdgeNxt.createOrUpdateIndividualConstituent', () => {
     }
 
     nock(SKY_API_BASE_URL)
-      .get(`/constituents/search?search_field=email_address&search_text=${identifyEventData.traits.email}`)
+      .get('/constituents/search?search_field=email_address&search_text=john@example.biz')
       .reply(200, {
         count: 0,
         value: []
@@ -150,7 +150,7 @@ describe('BlackbaudRaisersEdgeNxt.createOrUpdateIndividualConstituent', () => {
     const event = createTestEvent(identifyEventDataNoLastName)
 
     nock(SKY_API_BASE_URL)
-      .get(`/constituents/search?search_field=email_address&search_text=${identifyEventDataNoLastName.traits.email}`)
+      .get('/constituents/search?search_field=email_address&search_text=john@example.org')
       .reply(200, {
         count: 0,
         value: []
@@ -213,7 +213,7 @@ describe('BlackbaudRaisersEdgeNxt.createOrUpdateIndividualConstituent', () => {
     }
 
     nock(SKY_API_BASE_URL)
-      .get(`/constituents/search?search_field=email_address&search_text=${identifyEventDataWithUpdates.traits.email}`)
+      .get('/constituents/search?search_field=email_address&search_text=john@example.biz')
       .reply(200, {
         count: 1,
         value: [
@@ -383,12 +383,12 @@ describe('BlackbaudRaisersEdgeNxt.createOrUpdateIndividualConstituent', () => {
     }
 
     const emailPayload = {
-      address: 'john.doe@ail.com',
+      address: 'john.doe@aol.com',
       type: 'Personal'
     }
 
     nock(SKY_API_BASE_URL)
-      .get(`/constituents/search?search_field=lookup_id&search_text=${identifyEventDataWithUpdates.traits.lookup_id}`)
+      .get('/constituents/search?search_field=lookup_id&search_text=abcd1234')
       .reply(200, {
         count: 1,
         value: [
@@ -492,7 +492,7 @@ describe('BlackbaudRaisersEdgeNxt.createOrUpdateIndividualConstituent', () => {
     const event = createTestEvent(identifyEventData)
 
     nock(SKY_API_BASE_URL)
-      .get(`/constituents/search?search_field=email_address&search_text=${identifyEventData.traits.email}`)
+      .get('/constituents/search?search_field=email_address&search_text=john@example.biz')
       .reply(200, {
         count: 2,
         value: [
