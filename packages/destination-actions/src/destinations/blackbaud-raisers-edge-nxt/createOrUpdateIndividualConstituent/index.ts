@@ -347,7 +347,6 @@ const action: ActionDefinition<Settings, Payload> = {
         constituentData[key] = payload[key]
       }
     })
-
     if (payload.birthdate) {
       const birthdateDate = new Date(payload.birthdate)
       if (!isNaN(birthdateDate)) {
@@ -656,7 +655,7 @@ const action: ActionDefinition<Settings, Payload> = {
         }
       }
 
-      // TODO: return value
+      return
     }
   }
 }
