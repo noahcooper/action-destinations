@@ -79,7 +79,8 @@ describe('BlackbaudRaisersEdgeNxt.createOrUpdateIndividualConstituent', () => {
       phone: {
         number: '+18774466722',
         type: 'Home'
-      }
+      },
+      type: 'Individual'
     }
 
     nock(SKY_API_BASE_URL)
@@ -121,7 +122,8 @@ describe('BlackbaudRaisersEdgeNxt.createOrUpdateIndividualConstituent', () => {
       phone: {
         number: '+18774466722',
         type: 'Home'
-      }
+      },
+      type: 'Individual'
     }
 
     nock(SKY_API_BASE_URL).post('/constituents', constituentPayload).reply(200, {
@@ -187,11 +189,6 @@ describe('BlackbaudRaisersEdgeNxt.createOrUpdateIndividualConstituent', () => {
 
     const event = createTestEvent(identifyEventDataWithUpdates)
 
-    const constituentPayload = {
-      first: 'John',
-      last: 'Doe'
-    }
-
     const addressPayload = {
       address_lines: '11 Wall St',
       city: 'New York',
@@ -229,8 +226,6 @@ describe('BlackbaudRaisersEdgeNxt.createOrUpdateIndividualConstituent', () => {
           }
         ]
       })
-
-    nock(SKY_API_BASE_URL).patch('/constituents/123', constituentPayload).reply(200)
 
     nock(SKY_API_BASE_URL)
       .get('/constituents/123/addresses?include_inactive=true')

@@ -380,11 +380,14 @@ const action: ActionDefinition<Settings, Payload> = {
       }
     } else {
       // existing constituent
-      // update constituent
-      await request(`${SKY_API_BASE_URL}/constituents/${constituentId}`, {
-        method: 'patch',
-        json: constituentData
-      })
+      if (Object.keys(constituentData).length > 0) {
+        // request has at least one constituent field to update
+        // update constituent
+        await request(`${SKY_API_BASE_URL}/constituents/${constituentId}`, {
+          method: 'patch',
+          json: constituentData
+        })
+      }
 
       if (constituentAddressData) {
         // request has address data
