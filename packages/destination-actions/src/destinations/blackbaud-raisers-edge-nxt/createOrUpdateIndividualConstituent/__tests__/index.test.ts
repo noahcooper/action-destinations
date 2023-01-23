@@ -139,32 +139,6 @@ describe('BlackbaudRaisersEdgeNxt.createOrUpdateIndividualConstituent', () => {
     ).resolves.not.toThrowError()
   })
 
-  test('should throw an error if new constituent has no last name', async () => {
-    const identifyEventDataNoLastName: Partial<SegmentEvent> = {
-      type: 'identify',
-      traits: {
-        email: 'john@example.org'
-      }
-    }
-
-    const event = createTestEvent(identifyEventDataNoLastName)
-
-    nock(SKY_API_BASE_URL)
-      .get('/constituents/search?search_field=email_address&search_text=john@example.org')
-      .reply(200, {
-        count: 0,
-        value: []
-      })
-
-    await expect(
-      testDestination.testAction('createOrUpdateIndividualConstituent', {
-        event,
-        mapping,
-        useDefaultMappings: true
-      })
-    ).rejects.toThrowError()
-  })
-
   test('should update an existing constituent matched by email successfully', async () => {
     const identifyEventDataWithUpdates = {
       ...identifyEventData,
@@ -519,6 +493,55 @@ describe('BlackbaudRaisersEdgeNxt.createOrUpdateIndividualConstituent', () => {
         mapping,
         useDefaultMappings: true
       })
-    ).rejects.toThrowError()
+    ).rejects.toThrowError('Multiple records returned for given traits')
+  })
+
+  test('should throw a RetryableError if constituent search returns a 429', async () => {
+    const identifyEventDataNoLastName: Partial<SegmentEvent> = {
+      type: 'identify',
+      traits: {
+        email: 'john@example.org'
+      }
+    }
+
+    const event = createTestEvent(identifyEventDataNoLastName)
+
+    nock(SKY_API_BASE_URL)
+      .get('/constituents/search?search_field=email_address&search_text=john@example.org')
+      .reply(429)
+
+    await expect(
+      testDestination.testAction('createOrUpdateIndividualConstituent', {
+        event,
+        mapping,
+        useDefaultMappings: true
+      })
+    ).rejects.toThrowError('429 error returned when searching for constituent')
+  })
+
+  test('should throw an error if new constituent has no last name', async () => {
+    const identifyEventDataNoLastName: Partial<SegmentEvent> = {
+      type: 'identify',
+      traits: {
+        email: 'john@example.org'
+      }
+    }
+
+    const event = createTestEvent(identifyEventDataNoLastName)
+
+    nock(SKY_API_BASE_URL)
+      .get('/constituents/search?search_field=email_address&search_text=john@example.org')
+      .reply(200, {
+        count: 0,
+        value: []
+      })
+
+    await expect(
+      testDestination.testAction('createOrUpdateIndividualConstituent', {
+        event,
+        mapping,
+        useDefaultMappings: true
+      })
+    ).rejects.toThrowError('Missing last name value')
   })
 })

@@ -1,4 +1,4 @@
-import { ActionDefinition, IntegrationError } from '@segment/actions-core'
+import { ActionDefinition, IntegrationError, RetryableError } from '@segment/actions-core'
 import type { Settings } from '../generated-types'
 import type { Payload } from './generated-types'
 import { SKY_API_BASE_URL } from '../constants'
@@ -331,22 +331,37 @@ const action: ActionDefinition<Settings, Payload> = {
         searchField = 'lookup_id'
         searchText = payload.lookup_id
       }
-      const constituentSearchResponse = await request(
-        `${SKY_API_BASE_URL}/constituents/search?search_field=${searchField}&search_text=${searchText}`,
-        {
-          method: 'get'
+
+      try {
+        const constituentSearchResponse = await request(
+          `${SKY_API_BASE_URL}/constituents/search?search_field=${searchField}&search_text=${searchText}`,
+          {
+            method: 'get'
+          }
+        )
+        const constituentSearchResults = await constituentSearchResponse.json()
+
+        if (constituentSearchResults.count > 1) {
+          // multiple existing constituents, throw an error
+          throw new IntegrationError('Multiple records returned for given traits', 'MULTIPLE_EXISTING_RECORDS', 400)
+        } else if (constituentSearchResults.count === 1) {
+          // existing constituent
+          constituentId = constituentSearchResults.value[0].id
+        } else if (constituentSearchResults.count !== 0) {
+          // if constituent count is not >= 0, something went wrong
+          throw new IntegrationError('Unexpected record count for given traits', 'UNEXPECTED_RECORD_COUNT', 400)
         }
-      )
-      const constituentSearchResults = await constituentSearchResponse.json()
-      if (constituentSearchResults.count > 1) {
-        // multiple existing constituents, throw an error
-        throw new IntegrationError('Multiple records returned for given traits', 'MULTIPLE_EXISTING_RECORDS', 400)
-      } else if (constituentSearchResults.count === 1) {
-        // existing constituent
-        constituentId = constituentSearchResults.value[0].id
-      } else if (constituentSearchResults.count !== 0) {
-        // if constituent count is not >= 0, something went wrong
-        throw new IntegrationError('Unexpected record count for given traits', 'UNEXPECTED_RECORD_COUNT', 400)
+      } catch (error) {
+        const statusCode = error?.response?.status
+        if (statusCode === 429 || statusCode >= 500) {
+          throw new RetryableError(`${statusCode} error returned when searching for constituent`)
+        } else {
+          throw new IntegrationError(
+            'Error returned when searching for constituent',
+            'CONSTITUENT_SEARCH_ERROR',
+            statusCode || 500
+          )
+        }
       }
     }
 
@@ -665,9 +680,9 @@ const action: ActionDefinition<Settings, Payload> = {
           }
         }
       }
-
-      return
     }
+
+    return
   }
 }
 
