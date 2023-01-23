@@ -114,7 +114,24 @@ const action: ActionDefinition<Settings, Payload> = {
         }
       }
     },
-    // TODO: birthdate
+    birthdate: {
+      label: 'Birthdate',
+      description: "The constituent's birthdate.",
+      type: 'string',
+      default: {
+        '@if': {
+          exists: {
+            '@path': '$.traits.birthday'
+          },
+          then: {
+            '@path': '$.traits.birthday'
+          },
+          else: {
+            '@path': '$.properties.birthday'
+          }
+        }
+      }
+    },
     email: {
       label: 'Email',
       description: "The constituent's email address.",
@@ -330,7 +347,20 @@ const action: ActionDefinition<Settings, Payload> = {
         constituentData[key] = payload[key]
       }
     })
-    // TODO: birthdate
+
+    if (payload.birthdate) {
+      const birthdateDate = new Date(payload.birthdate)
+      if (!isNaN(birthdateDate)) {
+        // valid date object
+        // convert birthdate to a "Fuzzy date"
+        // https://developer.blackbaud.com/skyapi/renxt/constituent/entities#FuzzyDate
+        constituentData.birthdate = {
+          d: birthdateDate.getDate().toString(),
+          m: (birthdateDate.getMonth() + 1).toString(),
+          y: birthdateDate.getFullYear().toString()
+        }
+      }
+    }
 
     // data for address call
     let constituentAddressData = undefined

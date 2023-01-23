@@ -352,6 +352,7 @@ describe('BlackbaudRaisersEdgeNxt.createOrUpdateIndividualConstituent', () => {
           street: '11 Wall St'
         },
         address_type: 'Work',
+        birthday: '2001-01-01T01:01:01-05:00',
         email: 'john.doe@aol.com',
         email_type: 'Personal',
         first_name: 'John',
@@ -363,6 +364,11 @@ describe('BlackbaudRaisersEdgeNxt.createOrUpdateIndividualConstituent', () => {
     const event = createTestEvent(identifyEventDataWithUpdates)
 
     const constituentPayload = {
+      birthdate: {
+        d: '1',
+        m: '1',
+        y: '2001'
+      },
       first: 'John',
       last: 'Doe',
       lookup_id: 'abcd1234'
