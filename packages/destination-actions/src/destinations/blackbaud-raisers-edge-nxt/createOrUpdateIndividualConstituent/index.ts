@@ -306,9 +306,7 @@ const action: ActionDefinition<Settings, Payload> = {
     }
 
     // data for constituent call
-    const constituentData = {
-      type: 'Individual'
-    }
+    const constituentData = {}
     const simpleConstituentFields = ['first', 'income', 'last', 'lookup_id']
     simpleConstituentFields.forEach((key) => {
       if (payload[key] !== undefined) {
@@ -352,6 +350,8 @@ const action: ActionDefinition<Settings, Payload> = {
 
     if (!constituentId) {
       // new constituent
+      // hardcode type
+      constituentData.type = 'Individual'
       if (!constituentData.last) {
         // last name is required to create a new constituent
         // no last name, throw an error
