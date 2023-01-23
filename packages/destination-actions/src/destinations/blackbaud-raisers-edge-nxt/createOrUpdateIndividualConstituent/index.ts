@@ -171,7 +171,11 @@ const action: ActionDefinition<Settings, Payload> = {
         }
       }
     },
-    // TODO: gender
+    gender: {
+      label: 'Gender',
+      description: "The constituent's gender.",
+      type: 'string'
+    },
     income: {
       label: 'Income',
       description: "The constituent's income.",
@@ -307,14 +311,13 @@ const action: ActionDefinition<Settings, Payload> = {
 
     // data for constituent call
     const constituentData = {}
-    const simpleConstituentFields = ['first', 'income', 'last', 'lookup_id']
+    const simpleConstituentFields = ['first', 'gender', 'income', 'last', 'lookup_id']
     simpleConstituentFields.forEach((key) => {
       if (payload[key] !== undefined) {
         constituentData[key] = payload[key]
       }
     })
     // TODO: birthdate
-    // TODO: gender
 
     // data for address call
     let constituentAddressData = undefined
