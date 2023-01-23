@@ -408,11 +408,11 @@ const action: ActionDefinition<Settings, Payload> = {
         if (constituentAddressListResults.count > 0) {
           existingAddress = constituentAddressListResults.value.filter((result) => {
             return (
-              result.address_lines === constituentAddressData.address_lines &&
-              result.city === constituentAddressData.city &&
-              result.country === constituentAddressData.country &&
-              result.postal_code === constituentAddressData.postal_code &&
-              result.state === constituentAddressData.state
+              result.address_lines.toLowerCase() === constituentAddressData.address_lines.toLowerCase() &&
+              result.city.toLowerCase() === constituentAddressData.city.toLowerCase() &&
+              result.country.toLowerCase() === constituentAddressData.country.toLowerCase() &&
+              result.postal_code.toLowerCase() === constituentAddressData.postal_code.toLowerCase() &&
+              result.state.toLowerCase() === constituentAddressData.state.toLowerCase()
             )
           })
         }
@@ -467,7 +467,7 @@ const action: ActionDefinition<Settings, Payload> = {
         let existingEmail = undefined
         if (constituentEmailListResults.count > 0) {
           existingEmail = constituentEmailListResults.value.filter((result) => {
-            return result.address === constituentEmailData.address
+            return result.address.toLowerCase() === constituentEmailData.address.toLowerCase()
           })
         }
 
@@ -521,7 +521,7 @@ const action: ActionDefinition<Settings, Payload> = {
         let existingOnlinePresence = undefined
         if (constituentOnlinePresenceListResults.count > 0) {
           existingOnlinePresence = constituentOnlinePresenceListResults.value.filter((result) => {
-            return result.address === constituentOnlinePresenceData.address
+            return result.address.toLowerCase() === constituentOnlinePresenceData.address.toLowerCase()
           })
         }
 
