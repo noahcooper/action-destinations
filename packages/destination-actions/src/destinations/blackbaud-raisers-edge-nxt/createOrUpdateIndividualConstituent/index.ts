@@ -174,7 +174,20 @@ const action: ActionDefinition<Settings, Payload> = {
     gender: {
       label: 'Gender',
       description: "The constituent's gender.",
-      type: 'string'
+      type: 'string',
+      default: {
+        '@if': {
+          exists: {
+            '@path': '$.traits.gender'
+          },
+          then: {
+            '@path': '$.traits.gender'
+          },
+          else: {
+            '@path': '$.properties.gender'
+          }
+        }
+      }
     },
     income: {
       label: 'Income',
