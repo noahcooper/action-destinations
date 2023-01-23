@@ -86,6 +86,7 @@ const action: ActionDefinition<Settings, Payload> = {
             }
           }
         },
+        do_not_mail: '',
         postal_code: {
           '@if': {
             exists: {
@@ -99,6 +100,7 @@ const action: ActionDefinition<Settings, Payload> = {
             }
           }
         },
+        primary: '',
         state: {
           '@if': {
             exists: {
@@ -111,7 +113,8 @@ const action: ActionDefinition<Settings, Payload> = {
               '@path': '$.properties.address.state'
             }
           }
-        }
+        },
+        type: ''
       }
     },
     birthdate: {
@@ -167,7 +170,10 @@ const action: ActionDefinition<Settings, Payload> = {
               '@path': '$.properties.email'
             }
           }
-        }
+        },
+        do_not_email: '',
+        primary: '',
+        type: ''
       }
     },
     first: {
@@ -265,7 +271,9 @@ const action: ActionDefinition<Settings, Payload> = {
               '@path': '$.properties.website'
             }
           }
-        }
+        },
+        primary: '',
+        type: ''
       }
     },
     phone: {
@@ -291,6 +299,7 @@ const action: ActionDefinition<Settings, Payload> = {
         }
       },
       default: {
+        do_not_call: '',
         number: {
           '@if': {
             exists: {
@@ -303,7 +312,9 @@ const action: ActionDefinition<Settings, Payload> = {
               '@path': '$.properties.phone'
             }
           }
-        }
+        },
+        primary: '',
+        type: ''
       }
     }
   },
