@@ -15,6 +15,10 @@ export interface Payload {
     type?: string
   }
   /**
+   * The constituent's birthdate.
+   */
+  birthdate?: string
+  /**
    * The constituent's email address.
    */
   email?: {

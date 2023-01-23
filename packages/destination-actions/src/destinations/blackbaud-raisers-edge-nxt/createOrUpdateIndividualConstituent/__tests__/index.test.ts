@@ -1,11 +1,11 @@
 import nock from 'nock'
-import { createTestEvent, createTestIntegration } from '@segment/actions-core'
+import { createTestEvent, createTestIntegration, SegmentEvent } from '@segment/actions-core'
 import Destination from '../../index'
 import { SKY_API_BASE_URL } from '../../constants'
 
 const testDestination = createTestIntegration(Destination)
 
-const identifyEventData = {
+const identifyEventData: Partial<SegmentEvent> = {
   type: 'identify',
   traits: {
     address: {
@@ -104,7 +104,7 @@ describe('BlackbaudRaisersEdgeNxt.createOrUpdateIndividualConstituent', () => {
   })
 
   test('should create a new constituent without email or lookup_id successfully', async () => {
-    const identifyEventDataNoEmail = {
+    const identifyEventDataNoEmail: Partial<SegmentEvent> = {
       type: 'identify',
       traits: {
         first_name: 'John',
@@ -140,7 +140,7 @@ describe('BlackbaudRaisersEdgeNxt.createOrUpdateIndividualConstituent', () => {
   })
 
   test('should throw an error if new constituent has no last name', async () => {
-    const identifyEventDataNoLastName = {
+    const identifyEventDataNoLastName: Partial<SegmentEvent> = {
       type: 'identify',
       traits: {
         email: 'john@example.org'
@@ -341,7 +341,7 @@ describe('BlackbaudRaisersEdgeNxt.createOrUpdateIndividualConstituent', () => {
   })
 
   test('should update an existing constituent matched by lookup_id successfully', async () => {
-    const identifyEventDataWithUpdates = {
+    const identifyEventDataWithUpdates: Partial<SegmentEvent> = {
       type: 'identify',
       traits: {
         ...identifyEventData.traits,
