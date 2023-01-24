@@ -1,5 +1,5 @@
 import nock from 'nock'
-import { createTestEvent, createTestIntegration } from '@segment/actions-core'
+import { createTestEvent, createTestIntegration, IntegrationError, RetryableError } from '@segment/actions-core'
 import Destination from '../../index'
 import { SKY_API_BASE_URL } from '../../constants'
 import {
@@ -356,7 +356,9 @@ describe('BlackbaudRaisersEdgeNxt.createOrUpdateIndividualConstituent', () => {
         mapping,
         useDefaultMappings: true
       })
-    ).rejects.toThrowError('Multiple records returned for given traits')
+    ).rejects.toThrowError(
+      new IntegrationError('Multiple records returned for given traits', 'MULTIPLE_EXISTING_RECORDS', 400)
+    )
   })
 
   test('should throw a RetryableError if constituent search returns a 429', async () => {
@@ -372,7 +374,7 @@ describe('BlackbaudRaisersEdgeNxt.createOrUpdateIndividualConstituent', () => {
         mapping,
         useDefaultMappings: true
       })
-    ).rejects.toThrowError('429 error returned when searching for constituent')
+    ).rejects.toThrowError(new RetryableError('429 error returned when searching for constituent'))
   })
 
   test('should throw an IntegrationError if new constituent has no last name', async () => {
@@ -391,7 +393,7 @@ describe('BlackbaudRaisersEdgeNxt.createOrUpdateIndividualConstituent', () => {
         mapping,
         useDefaultMappings: true
       })
-    ).rejects.toThrowError('Missing last name value')
+    ).rejects.toThrowError(new IntegrationError('Missing last name value', 'MISSING_REQUIRED_FIELD', 400))
   })
 
   test('should throw a RetryableError if creating new constituent returns a 429', async () => {
@@ -412,7 +414,7 @@ describe('BlackbaudRaisersEdgeNxt.createOrUpdateIndividualConstituent', () => {
         mapping,
         useDefaultMappings: true
       })
-    ).rejects.toThrowError('429 error occurred when creating constituent')
+    ).rejects.toThrowError(new RetryableError('429 error occurred when creating constituent'))
   })
 
   test('should throw an IntegrationError if one or more request returns a 400 when updating an existing constituent', async () => {
@@ -542,7 +544,11 @@ describe('BlackbaudRaisersEdgeNxt.createOrUpdateIndividualConstituent', () => {
         useDefaultMappings: true
       })
     ).rejects.toThrowError(
-      'One or more errors occurred when updating existing constituent: Error occurred when updating constituent online presence'
+      new IntegrationError(
+        'One or more errors occurred when updating existing constituent: Error occurred when updating constituent online presence',
+        'UPDATE_CONSTITUENT_ERROR',
+        500
+      )
     )
   })
 
@@ -609,7 +615,9 @@ describe('BlackbaudRaisersEdgeNxt.createOrUpdateIndividualConstituent', () => {
         useDefaultMappings: true
       })
     ).rejects.toThrowError(
-      'One or more errors occurred when updating existing constituent: 429 error occurred when updating constituent email, 429 error occurred when updating constituent online presence, 429 error occurred when updating constituent phone'
+      new RetryableError(
+        'One or more errors occurred when updating existing constituent: 429 error occurred when updating constituent email, 429 error occurred when updating constituent online presence, 429 error occurred when updating constituent phone'
+      )
     )
   })
 })
