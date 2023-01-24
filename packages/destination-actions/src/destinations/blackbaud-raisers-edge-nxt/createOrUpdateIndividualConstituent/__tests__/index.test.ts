@@ -1,30 +1,26 @@
 import nock from 'nock'
-import { createTestEvent, createTestIntegration, SegmentEvent } from '@segment/actions-core'
+import { createTestEvent, createTestIntegration } from '@segment/actions-core'
 import Destination from '../../index'
 import { SKY_API_BASE_URL } from '../../constants'
+import {
+  addressPayloadWithUpdatedStreet,
+  addressPayloadUpdated,
+  constituentPayload,
+  constituentPayloadNoEmail,
+  constituentPayloadWithLookupId,
+  emailPayloadPersonal,
+  emailPayloadUpdated,
+  identifyEventData,
+  identifyEventDataNoEmail,
+  identifyEventDataNoLastName,
+  identifyEventDataWithInvalidWebsite,
+  identifyEventDataWithLookupId,
+  identifyEventDataUpdated,
+  onlinePresencePayloadUpdated,
+  phonePayloadUpdated
+} from './fixtures'
 
 const testDestination = createTestIntegration(Destination)
-
-const identifyEventData: Partial<SegmentEvent> = {
-  type: 'identify',
-  traits: {
-    address: {
-      city: 'New York City',
-      postal_code: '10108',
-      state: 'NY',
-      street: 'PO Box 963'
-    },
-    address_type: 'Home',
-    email: 'john@example.biz',
-    email_type: 'Personal',
-    first_name: 'John',
-    last_name: 'Doe',
-    phone: '+18774466722',
-    phone_type: 'Home',
-    website: 'https://www.facebook.com/john.doe',
-    website_type: 'Facebook'
-  }
-}
 
 const mapping = {
   properties: {
@@ -58,31 +54,6 @@ describe('BlackbaudRaisersEdgeNxt.createOrUpdateIndividualConstituent', () => {
   test('should create a new constituent successfully', async () => {
     const event = createTestEvent(identifyEventData)
 
-    const constituentPayload = {
-      address: {
-        address_lines: 'PO Box 963',
-        city: 'New York City',
-        state: 'NY',
-        postal_code: '10108',
-        type: 'Home'
-      },
-      email: {
-        address: 'john@example.biz',
-        type: 'Personal'
-      },
-      first: 'John',
-      last: 'Doe',
-      online_presence: {
-        address: 'https://www.facebook.com/john.doe',
-        type: 'Facebook'
-      },
-      phone: {
-        number: '+18774466722',
-        type: 'Home'
-      },
-      type: 'Individual'
-    }
-
     nock(SKY_API_BASE_URL)
       .get('/constituents/search?search_field=email_address&search_text=john@example.biz')
       .reply(200, {
@@ -104,29 +75,9 @@ describe('BlackbaudRaisersEdgeNxt.createOrUpdateIndividualConstituent', () => {
   })
 
   test('should create a new constituent without email or lookup_id successfully', async () => {
-    const identifyEventDataNoEmail: Partial<SegmentEvent> = {
-      type: 'identify',
-      traits: {
-        first_name: 'John',
-        last_name: 'Doe',
-        phone: '+18774466722',
-        phone_type: 'Home'
-      }
-    }
-
     const event = createTestEvent(identifyEventDataNoEmail)
 
-    const constituentPayload = {
-      first: 'John',
-      last: 'Doe',
-      phone: {
-        number: '+18774466722',
-        type: 'Home'
-      },
-      type: 'Individual'
-    }
-
-    nock(SKY_API_BASE_URL).post('/constituents', constituentPayload).reply(200, {
+    nock(SKY_API_BASE_URL).post('/constituents', constituentPayloadNoEmail).reply(200, {
       id: '456'
     })
 
@@ -140,51 +91,7 @@ describe('BlackbaudRaisersEdgeNxt.createOrUpdateIndividualConstituent', () => {
   })
 
   test('should update an existing constituent matched by email successfully', async () => {
-    const identifyEventDataWithUpdates: Partial<SegmentEvent> = {
-      ...identifyEventData,
-      traits: {
-        ...identifyEventData.traits,
-        address: {
-          city: 'New York',
-          postal_code: '10005',
-          state: 'NY',
-          street: '11 Wall St'
-        },
-        address_type: 'Work',
-        email_type: 'Work',
-        first_name: 'John',
-        last_name: 'Doe',
-        phone: '+18774466723',
-        phone_type: 'Work',
-        website: 'https://www.example.biz',
-        website_type: 'Website'
-      }
-    }
-
-    const event = createTestEvent(identifyEventDataWithUpdates)
-
-    const addressPayload = {
-      address_lines: '11 Wall St',
-      city: 'New York',
-      state: 'NY',
-      postal_code: '10005',
-      type: 'Work'
-    }
-
-    const emailPayload = {
-      address: 'john@example.biz',
-      type: 'Work'
-    }
-
-    const onlinePresencePayload = {
-      address: 'https://www.example.biz',
-      type: 'Website'
-    }
-
-    const phonePayload = {
-      number: '+18774466723',
-      type: 'Work'
-    }
+    const event = createTestEvent(identifyEventDataUpdated)
 
     nock(SKY_API_BASE_URL)
       .get('/constituents/search?search_field=email_address&search_text=john@example.biz')
@@ -226,7 +133,7 @@ describe('BlackbaudRaisersEdgeNxt.createOrUpdateIndividualConstituent', () => {
 
     nock(SKY_API_BASE_URL)
       .post('/addresses', {
-        ...addressPayload,
+        ...addressPayloadUpdated,
         constituent_id: '123'
       })
       .reply(200, {
@@ -252,7 +159,7 @@ describe('BlackbaudRaisersEdgeNxt.createOrUpdateIndividualConstituent', () => {
         ]
       })
 
-    nock(SKY_API_BASE_URL).patch('/emailaddresses/9876', emailPayload).reply(200)
+    nock(SKY_API_BASE_URL).patch('/emailaddresses/9876', emailPayloadUpdated).reply(200)
 
     nock(SKY_API_BASE_URL)
       .get('/constituents/123/onlinepresences?include_inactive=true')
@@ -272,7 +179,7 @@ describe('BlackbaudRaisersEdgeNxt.createOrUpdateIndividualConstituent', () => {
 
     nock(SKY_API_BASE_URL)
       .post('/onlinepresences', {
-        ...onlinePresencePayload,
+        ...onlinePresencePayloadUpdated,
         constituent_id: '123'
       })
       .reply(200, {
@@ -298,7 +205,7 @@ describe('BlackbaudRaisersEdgeNxt.createOrUpdateIndividualConstituent', () => {
 
     nock(SKY_API_BASE_URL)
       .post('/phones', {
-        ...phonePayload,
+        ...phonePayloadUpdated,
         constituent_id: '123'
       })
       .reply(200, {
@@ -315,51 +222,7 @@ describe('BlackbaudRaisersEdgeNxt.createOrUpdateIndividualConstituent', () => {
   })
 
   test('should update an existing constituent matched by lookup_id successfully', async () => {
-    const identifyEventDataWithUpdates: Partial<SegmentEvent> = {
-      type: 'identify',
-      traits: {
-        ...identifyEventData.traits,
-        address: {
-          city: 'New York',
-          postal_code: '10005',
-          state: 'NY',
-          street: '11 Wall St'
-        },
-        address_type: 'Work',
-        birthday: '2001-01-01T01:01:01-05:00',
-        email: 'john.doe@aol.com',
-        email_type: 'Personal',
-        first_name: 'John',
-        last_name: 'Doe',
-        lookup_id: 'abcd1234'
-      }
-    }
-
-    const event = createTestEvent(identifyEventDataWithUpdates)
-
-    const constituentPayload = {
-      birthdate: {
-        d: '1',
-        m: '1',
-        y: '2001'
-      },
-      first: 'John',
-      last: 'Doe',
-      lookup_id: 'abcd1234'
-    }
-
-    const addressPayload = {
-      address_lines: '11 Wall Street',
-      city: 'New York',
-      state: 'NY',
-      postal_code: '10005',
-      type: 'Work'
-    }
-
-    const emailPayload = {
-      address: 'john.doe@aol.com',
-      type: 'Personal'
-    }
+    const event = createTestEvent(identifyEventDataWithLookupId)
 
     nock(SKY_API_BASE_URL)
       .get('/constituents/search?search_field=lookup_id&search_text=abcd1234')
@@ -376,7 +239,7 @@ describe('BlackbaudRaisersEdgeNxt.createOrUpdateIndividualConstituent', () => {
         ]
       })
 
-    nock(SKY_API_BASE_URL).patch('/constituents/123', constituentPayload).reply(200)
+    nock(SKY_API_BASE_URL).patch('/constituents/123', constituentPayloadWithLookupId).reply(200)
 
     nock(SKY_API_BASE_URL)
       .get('/constituents/123/addresses?include_inactive=true')
@@ -418,7 +281,7 @@ describe('BlackbaudRaisersEdgeNxt.createOrUpdateIndividualConstituent', () => {
 
     nock(SKY_API_BASE_URL)
       .post('/addresses', {
-        ...addressPayload,
+        ...addressPayloadWithUpdatedStreet,
         constituent_id: '123'
       })
       .reply(200, {
@@ -446,7 +309,7 @@ describe('BlackbaudRaisersEdgeNxt.createOrUpdateIndividualConstituent', () => {
 
     nock(SKY_API_BASE_URL)
       .post('/emailaddresses', {
-        ...emailPayload,
+        ...emailPayloadPersonal,
         constituent_id: '123'
       })
       .reply(200, {
@@ -513,13 +376,6 @@ describe('BlackbaudRaisersEdgeNxt.createOrUpdateIndividualConstituent', () => {
   })
 
   test('should throw an IntegrationError if new constituent has no last name', async () => {
-    const identifyEventDataNoLastName: Partial<SegmentEvent> = {
-      type: 'identify',
-      traits: {
-        email: 'john@example.org'
-      }
-    }
-
     const event = createTestEvent(identifyEventDataNoLastName)
 
     nock(SKY_API_BASE_URL)
@@ -541,31 +397,6 @@ describe('BlackbaudRaisersEdgeNxt.createOrUpdateIndividualConstituent', () => {
   test('should throw a RetryableError if creating new constituent returns a 429', async () => {
     const event = createTestEvent(identifyEventData)
 
-    const constituentPayload = {
-      address: {
-        address_lines: 'PO Box 963',
-        city: 'New York City',
-        state: 'NY',
-        postal_code: '10108',
-        type: 'Home'
-      },
-      email: {
-        address: 'john@example.biz',
-        type: 'Personal'
-      },
-      first: 'John',
-      last: 'Doe',
-      online_presence: {
-        address: 'https://www.facebook.com/john.doe',
-        type: 'Facebook'
-      },
-      phone: {
-        number: '+18774466722',
-        type: 'Home'
-      },
-      type: 'Individual'
-    }
-
     nock(SKY_API_BASE_URL)
       .get('/constituents/search?search_field=email_address&search_text=john@example.biz')
       .reply(200, {
@@ -585,51 +416,7 @@ describe('BlackbaudRaisersEdgeNxt.createOrUpdateIndividualConstituent', () => {
   })
 
   test('should throw an IntegrationError if one or more request returns a 400 when updating an existing constituent', async () => {
-    const identifyEventDataWithUpdates: Partial<SegmentEvent> = {
-      ...identifyEventData,
-      traits: {
-        ...identifyEventData.traits,
-        address: {
-          city: 'New York',
-          postal_code: '10005',
-          state: 'NY',
-          street: '11 Wall St'
-        },
-        address_type: 'Work',
-        email_type: 'Work',
-        first_name: 'John',
-        last_name: 'Doe',
-        phone: '+18774466723',
-        phone_type: 'Work',
-        website: 'https://www.example.biz',
-        website_type: 'Invalid'
-      }
-    }
-
-    const event = createTestEvent(identifyEventDataWithUpdates)
-
-    const addressPayload = {
-      address_lines: '11 Wall St',
-      city: 'New York',
-      state: 'NY',
-      postal_code: '10005',
-      type: 'Work'
-    }
-
-    const emailPayload = {
-      address: 'john@example.biz',
-      type: 'Work'
-    }
-
-    const onlinePresencePayload = {
-      address: 'https://www.example.biz',
-      type: 'Website'
-    }
-
-    const phonePayload = {
-      number: '+18774466723',
-      type: 'Work'
-    }
+    const event = createTestEvent(identifyEventDataWithInvalidWebsite)
 
     nock(SKY_API_BASE_URL)
       .get('/constituents/search?search_field=email_address&search_text=john@example.biz')
@@ -671,7 +458,7 @@ describe('BlackbaudRaisersEdgeNxt.createOrUpdateIndividualConstituent', () => {
 
     nock(SKY_API_BASE_URL)
       .post('/addresses', {
-        ...addressPayload,
+        ...addressPayloadUpdated,
         constituent_id: '123'
       })
       .reply(200, {
@@ -697,7 +484,7 @@ describe('BlackbaudRaisersEdgeNxt.createOrUpdateIndividualConstituent', () => {
         ]
       })
 
-    nock(SKY_API_BASE_URL).patch('/emailaddresses/9876', emailPayload).reply(200)
+    nock(SKY_API_BASE_URL).patch('/emailaddresses/9876', emailPayloadUpdated).reply(200)
 
     nock(SKY_API_BASE_URL)
       .get('/constituents/123/onlinepresences?include_inactive=true')
@@ -717,7 +504,7 @@ describe('BlackbaudRaisersEdgeNxt.createOrUpdateIndividualConstituent', () => {
 
     nock(SKY_API_BASE_URL)
       .post('/onlinepresences', {
-        ...onlinePresencePayload,
+        ...onlinePresencePayloadUpdated,
         constituent_id: '123'
       })
       .reply(400)
@@ -741,7 +528,7 @@ describe('BlackbaudRaisersEdgeNxt.createOrUpdateIndividualConstituent', () => {
 
     nock(SKY_API_BASE_URL)
       .post('/phones', {
-        ...phonePayload,
+        ...phonePayloadUpdated,
         constituent_id: '123'
       })
       .reply(200, {
@@ -760,36 +547,7 @@ describe('BlackbaudRaisersEdgeNxt.createOrUpdateIndividualConstituent', () => {
   })
 
   test('should throw a RetryableError if one or more request returns a 429 when updating an existing constituent', async () => {
-    const identifyEventDataWithUpdates: Partial<SegmentEvent> = {
-      ...identifyEventData,
-      traits: {
-        ...identifyEventData.traits,
-        address: {
-          city: 'New York',
-          postal_code: '10005',
-          state: 'NY',
-          street: '11 Wall St'
-        },
-        address_type: 'Work',
-        email_type: 'Work',
-        first_name: 'John',
-        last_name: 'Doe',
-        phone: '+18774466723',
-        phone_type: 'Work',
-        website: 'https://www.example.biz',
-        website_type: 'Website'
-      }
-    }
-
-    const event = createTestEvent(identifyEventDataWithUpdates)
-
-    const addressPayload = {
-      address_lines: '11 Wall St',
-      city: 'New York',
-      state: 'NY',
-      postal_code: '10005',
-      type: 'Work'
-    }
+    const event = createTestEvent(identifyEventDataUpdated)
 
     nock(SKY_API_BASE_URL)
       .get('/constituents/search?search_field=email_address&search_text=john@example.biz')
@@ -831,7 +589,7 @@ describe('BlackbaudRaisersEdgeNxt.createOrUpdateIndividualConstituent', () => {
 
     nock(SKY_API_BASE_URL)
       .post('/addresses', {
-        ...addressPayload,
+        ...addressPayloadUpdated,
         constituent_id: '123'
       })
       .reply(200, {
