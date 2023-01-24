@@ -63,7 +63,7 @@ export const identifyEventDataWithLookupId: Partial<SegmentEvent> = {
   traits: {
     ...identifyEventDataUpdated.traits,
     address: {
-      ...identifyEventDataUpdated.traits.address,
+      ...(typeof identifyEventDataUpdated.traits?.address === 'object' ? identifyEventDataUpdated.traits.address : {}),
       street: '11 Wall Street'
     },
     birthday: '2001-01-01T01:01:01-05:00',
@@ -76,7 +76,7 @@ export const identifyEventDataWithLookupId: Partial<SegmentEvent> = {
 export const identifyEventDataWithInvalidWebsite: Partial<SegmentEvent> = {
   ...identifyEventDataUpdated,
   traits: {
-    ...identifyEventDataUpdated,
+    ...identifyEventDataUpdated.traits,
     website_type: 'Invalid'
   }
 }
