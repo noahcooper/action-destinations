@@ -462,7 +462,7 @@ describe('BlackbaudRaisersEdgeNxt.createOrUpdateIndividualConstituent', () => {
     ).resolves.not.toThrowError()
   })
 
-  test('should throw an error if multiple records matched', async () => {
+  test('should throw an IntegrationError if multiple records matched', async () => {
     const event = createTestEvent(identifyEventData)
 
     nock(SKY_API_BASE_URL)
@@ -519,7 +519,7 @@ describe('BlackbaudRaisersEdgeNxt.createOrUpdateIndividualConstituent', () => {
     ).rejects.toThrowError('429 error returned when searching for constituent')
   })
 
-  test('should throw an error if new constituent has no last name', async () => {
+  test('should throw an IntegrationError if new constituent has no last name', async () => {
     const identifyEventDataNoLastName: Partial<SegmentEvent> = {
       type: 'identify',
       traits: {
@@ -543,5 +543,276 @@ describe('BlackbaudRaisersEdgeNxt.createOrUpdateIndividualConstituent', () => {
         useDefaultMappings: true
       })
     ).rejects.toThrowError('Missing last name value')
+  })
+
+  test('should throw an IntegrationError if one or more request returns a 400 when updating an existing constituent', async () => {
+    const identifyEventDataWithUpdates = {
+      ...identifyEventData,
+      traits: {
+        ...identifyEventData.traits,
+        address: {
+          city: 'New York',
+          postal_code: '10005',
+          state: 'NY',
+          street: '11 Wall St'
+        },
+        address_type: 'Work',
+        email_type: 'Work',
+        first_name: 'John',
+        last_name: 'Doe',
+        phone: '+18774466723',
+        phone_type: 'Work',
+        website: 'https://www.example.biz',
+        website_type: 'Invalid'
+      }
+    }
+
+    const event = createTestEvent(identifyEventDataWithUpdates)
+
+    const addressPayload = {
+      address_lines: '11 Wall St',
+      city: 'New York',
+      state: 'NY',
+      postal_code: '10005',
+      type: 'Work'
+    }
+
+    const emailPayload = {
+      address: 'john@example.biz',
+      type: 'Work'
+    }
+
+    const onlinePresencePayload = {
+      address: 'https://www.example.biz',
+      type: 'Website'
+    }
+
+    const phonePayload = {
+      number: '+18774466723',
+      type: 'Work'
+    }
+
+    nock(SKY_API_BASE_URL)
+      .get('/constituents/search?search_field=email_address&search_text=john@example.biz')
+      .reply(200, {
+        count: 1,
+        value: [
+          {
+            id: '123',
+            address: 'PO Box 963\r\nNew York City, NY 10108',
+            email: 'john@example.biz',
+            fundraiser_status: 'None',
+            name: 'John Doe'
+          }
+        ]
+      })
+
+    nock(SKY_API_BASE_URL)
+      .get('/constituents/123/addresses?include_inactive=true')
+      .reply(200, {
+        count: 1,
+        value: [
+          {
+            id: '1000',
+            address_lines: 'PO Box 963',
+            city: 'New York City',
+            constituent_id: '123',
+            date_added: '2023-01-01T01:01:01.000-05:00',
+            date_modified: '2023-01-01T01:01:01.000-05:00',
+            do_not_mail: false,
+            formatted_address: 'PO Box 963\r\nNew York City, NY 10108',
+            inactive: false,
+            postal_code: '10108',
+            preferred: true,
+            state: 'NY',
+            type: 'Home'
+          }
+        ]
+      })
+
+    nock(SKY_API_BASE_URL)
+      .post('/addresses', {
+        ...addressPayload,
+        constituent_id: '123'
+      })
+      .reply(200, {
+        id: '1001'
+      })
+
+    nock(SKY_API_BASE_URL)
+      .get('/constituents/123/emailaddresses?include_inactive=true')
+      .reply(200, {
+        count: 1,
+        value: [
+          {
+            id: '2000',
+            address: 'john@example.biz',
+            constituent_id: '123',
+            date_added: '2023-01-01T01:01:01.000-05:00',
+            date_modified: '2023-01-01T01:01:01.000-05:00',
+            do_not_email: false,
+            inactive: false,
+            primary: true,
+            type: 'Home'
+          }
+        ]
+      })
+
+    nock(SKY_API_BASE_URL).patch('/emailaddresses/9876', emailPayload).reply(200)
+
+    nock(SKY_API_BASE_URL)
+      .get('/constituents/123/onlinepresences?include_inactive=true')
+      .reply(200, {
+        count: 1,
+        value: [
+          {
+            id: '3000',
+            address: 'https://www.facebook.com/john.doe',
+            constituent_id: '123',
+            inactive: false,
+            primary: true,
+            type: 'Facebook'
+          }
+        ]
+      })
+
+    nock(SKY_API_BASE_URL)
+      .post('/onlinepresences', {
+        ...onlinePresencePayload,
+        constituent_id: '123'
+      })
+      .reply(400)
+
+    nock(SKY_API_BASE_URL)
+      .get('/constituents/123/phones?include_inactive=true')
+      .reply(200, {
+        count: 1,
+        value: [
+          {
+            id: '4000',
+            constituent_id: '123',
+            do_not_call: false,
+            inactive: false,
+            number: '+18774466722',
+            primary: true,
+            type: 'Home'
+          }
+        ]
+      })
+
+    nock(SKY_API_BASE_URL)
+      .post('/phones', {
+        ...phonePayload,
+        constituent_id: '123'
+      })
+      .reply(200, {
+        id: '4001'
+      })
+
+    await expect(
+      testDestination.testAction('createOrUpdateIndividualConstituent', {
+        event,
+        mapping,
+        useDefaultMappings: true
+      })
+    ).rejects.toThrowError(
+      'One or more errors occurred when updating existing constituent: Error occurred when updating constituent online presence'
+    )
+  })
+
+  test('should throw a RetryableError if one or more request returns a 429 when updating an existing constituent', async () => {
+    const identifyEventDataWithUpdates = {
+      ...identifyEventData,
+      traits: {
+        ...identifyEventData.traits,
+        address: {
+          city: 'New York',
+          postal_code: '10005',
+          state: 'NY',
+          street: '11 Wall St'
+        },
+        address_type: 'Work',
+        email_type: 'Work',
+        first_name: 'John',
+        last_name: 'Doe',
+        phone: '+18774466723',
+        phone_type: 'Work',
+        website: 'https://www.example.biz',
+        website_type: 'Website'
+      }
+    }
+
+    const event = createTestEvent(identifyEventDataWithUpdates)
+
+    const addressPayload = {
+      address_lines: '11 Wall St',
+      city: 'New York',
+      state: 'NY',
+      postal_code: '10005',
+      type: 'Work'
+    }
+
+    nock(SKY_API_BASE_URL)
+      .get('/constituents/search?search_field=email_address&search_text=john@example.biz')
+      .reply(200, {
+        count: 1,
+        value: [
+          {
+            id: '123',
+            address: 'PO Box 963\r\nNew York City, NY 10108',
+            email: 'john@example.biz',
+            fundraiser_status: 'None',
+            name: 'John Doe'
+          }
+        ]
+      })
+
+    nock(SKY_API_BASE_URL)
+      .get('/constituents/123/addresses?include_inactive=true')
+      .reply(200, {
+        count: 1,
+        value: [
+          {
+            id: '1000',
+            address_lines: 'PO Box 963',
+            city: 'New York City',
+            constituent_id: '123',
+            date_added: '2023-01-01T01:01:01.000-05:00',
+            date_modified: '2023-01-01T01:01:01.000-05:00',
+            do_not_mail: false,
+            formatted_address: 'PO Box 963\r\nNew York City, NY 10108',
+            inactive: false,
+            postal_code: '10108',
+            preferred: true,
+            state: 'NY',
+            type: 'Home'
+          }
+        ]
+      })
+
+    nock(SKY_API_BASE_URL)
+      .post('/addresses', {
+        ...addressPayload,
+        constituent_id: '123'
+      })
+      .reply(200, {
+        id: '1001'
+      })
+
+    nock(SKY_API_BASE_URL).get('/constituents/123/emailaddresses?include_inactive=true').reply(429)
+
+    nock(SKY_API_BASE_URL).get('/constituents/123/onlinepresences?include_inactive=true').reply(429)
+
+    nock(SKY_API_BASE_URL).get('/constituents/123/phones?include_inactive=true').reply(429)
+
+    await expect(
+      testDestination.testAction('createOrUpdateIndividualConstituent', {
+        event,
+        mapping,
+        useDefaultMappings: true
+      })
+    ).rejects.toThrowError(
+      'One or more errors occurred when updating existing constituent: 429 error occurred when updating constituent email, 429 error occurred when updating constituent online presence, 429 error occurred when updating constituent phone'
+    )
   })
 })

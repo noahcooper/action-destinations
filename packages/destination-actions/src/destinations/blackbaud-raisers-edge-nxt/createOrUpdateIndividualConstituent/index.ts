@@ -349,15 +349,15 @@ const action: ActionDefinition<Settings, Payload> = {
           constituentId = constituentSearchResults.value[0].id
         } else if (constituentSearchResults.count !== 0) {
           // if constituent count is not >= 0, something went wrong
-          throw new IntegrationError('Unexpected record count for given traits', 'UNEXPECTED_RECORD_COUNT', 400)
+          throw new IntegrationError('Unexpected record count for given traits', 'UNEXPECTED_RECORD_COUNT', 500)
         }
       } catch (error) {
         const statusCode = error?.response?.status
         if (statusCode === 429 || statusCode >= 500) {
-          throw new RetryableError(`${statusCode} error returned when searching for constituent`)
+          throw new RetryableError(`${statusCode} error occurred when searching for constituent`)
         } else {
           throw new IntegrationError(
-            'Error returned when searching for constituent',
+            'Error occurred when searching for constituent',
             'CONSTITUENT_SEARCH_ERROR',
             statusCode || 500
           )
@@ -449,73 +449,96 @@ const action: ActionDefinition<Settings, Payload> = {
           json: constituentData
         })
       }
+
+      return
     } else {
       // existing constituent
+      // aggregate all errors
+      const integrationErrors = []
+      const retryableErrors = []
       if (Object.keys(constituentData).length > 0) {
         // request has at least one constituent field to update
         // update constituent
-        await request(`${SKY_API_BASE_URL}/constituents/${constituentId}`, {
-          method: 'patch',
-          json: constituentData
-        })
+        try {
+          await request(`${SKY_API_BASE_URL}/constituents/${constituentId}`, {
+            method: 'patch',
+            json: constituentData
+          })
+        } catch (error) {
+          const statusCode = error?.response?.status
+          if (statusCode === 429 || statusCode >= 500) {
+            retryableErrors.push(`${statusCode} error occurred when updating constituent`)
+          } else {
+            integrationErrors.push('Error occurred when updating constituent')
+          }
+        }
       }
 
       if (constituentAddressData) {
         // request has address data
         // get existing addresses
-        const constituentAddressListResponse = await request(
-          `${SKY_API_BASE_URL}/constituents/${constituentId}/addresses?include_inactive=true`,
-          {
-            method: 'get'
-          }
-        )
-        const constituentAddressListResults = await constituentAddressListResponse.json()
-
-        // check address list for one that matches request
-        let existingAddress = undefined
-        if (constituentAddressListResults.count > 0) {
-          existingAddress = constituentAddressListResults.value.filter((result) => {
-            return (
-              result.address_lines.toLowerCase() === constituentAddressData.address_lines.toLowerCase() &&
-              result.city.toLowerCase() === constituentAddressData.city.toLowerCase() &&
-              result.country.toLowerCase() === constituentAddressData.country.toLowerCase() &&
-              result.postal_code.toLowerCase() === constituentAddressData.postal_code.toLowerCase() &&
-              result.state.toLowerCase() === constituentAddressData.state.toLowerCase()
-            )
-          })
-        }
-
-        if (!existingAddress) {
-          // new address
-          // create address
-          await request(`${SKY_API_BASE_URL}/addresses`, {
-            method: 'post',
-            json: {
-              ...constituentAddressData,
-              constituent_id: constituentId,
-              // if this is the only address, make it primary
-              primary:
-                constituentAddressData.primary ||
-                (constituentAddressData.primary !== false && constituentAddressListResults.count === 0)
+        try {
+          const constituentAddressListResponse = await request(
+            `${SKY_API_BASE_URL}/constituents/${constituentId}/addresses?include_inactive=true`,
+            {
+              method: 'get'
             }
-          })
-        } else {
-          // existing address
-          if (
-            existingAddress.inactive ||
-            constituentAddressData.do_not_mail !== existingAddress.do_not_mail ||
-            constituentAddressData.primary !== existingAddress.primary ||
-            constituentAddressData.type !== existingAddress.type
-          ) {
-            // request has at least one address field to update
-            // update address
-            await request(`${SKY_API_BASE_URL}/addresses/${existingAddress.id}`, {
-              method: 'patch',
+          )
+          const constituentAddressListResults = await constituentAddressListResponse.json()
+
+          // check address list for one that matches request
+          let existingAddress = undefined
+          if (constituentAddressListResults.count > 0) {
+            existingAddress = constituentAddressListResults.value.filter((result) => {
+              return (
+                result.address_lines.toLowerCase() === constituentAddressData.address_lines.toLowerCase() &&
+                result.city.toLowerCase() === constituentAddressData.city.toLowerCase() &&
+                result.country.toLowerCase() === constituentAddressData.country.toLowerCase() &&
+                result.postal_code.toLowerCase() === constituentAddressData.postal_code.toLowerCase() &&
+                result.state.toLowerCase() === constituentAddressData.state.toLowerCase()
+              )
+            })
+          }
+
+          if (!existingAddress) {
+            // new address
+            // create address
+            await request(`${SKY_API_BASE_URL}/addresses`, {
+              method: 'post',
               json: {
                 ...constituentAddressData,
-                inactive: false
+                constituent_id: constituentId,
+                // if this is the only address, make it primary
+                primary:
+                  constituentAddressData.primary ||
+                  (constituentAddressData.primary !== false && constituentAddressListResults.count === 0)
               }
             })
+          } else {
+            // existing address
+            if (
+              existingAddress.inactive ||
+              constituentAddressData.do_not_mail !== existingAddress.do_not_mail ||
+              constituentAddressData.primary !== existingAddress.primary ||
+              constituentAddressData.type !== existingAddress.type
+            ) {
+              // request has at least one address field to update
+              // update address
+              await request(`${SKY_API_BASE_URL}/addresses/${existingAddress.id}`, {
+                method: 'patch',
+                json: {
+                  ...constituentAddressData,
+                  inactive: false
+                }
+              })
+            }
+          }
+        } catch (error) {
+          const statusCode = error?.response?.status
+          if (statusCode === 429 || statusCode >= 500) {
+            retryableErrors.push(`${statusCode} error occurred when updating constituent address`)
+          } else {
+            integrationErrors.push('Error occurred when updating constituent address')
           }
         }
       }
@@ -523,53 +546,62 @@ const action: ActionDefinition<Settings, Payload> = {
       if (constituentEmailData) {
         // request has email data
         // get existing addresses
-        const constituentEmailListResponse = await request(
-          `${SKY_API_BASE_URL}/constituents/${constituentId}/emailaddresses?include_inactive=true`,
-          {
-            method: 'get'
-          }
-        )
-        const constituentEmailListResults = await constituentEmailListResponse.json()
-
-        // check email list for one that matches request
-        let existingEmail = undefined
-        if (constituentEmailListResults.count > 0) {
-          existingEmail = constituentEmailListResults.value.filter((result) => {
-            return result.address.toLowerCase() === constituentEmailData.address.toLowerCase()
-          })
-        }
-
-        if (!existingEmail) {
-          // new email
-          // create email
-          await request(`${SKY_API_BASE_URL}/emailaddresses`, {
-            method: 'post',
-            json: {
-              ...constituentEmailData,
-              constituent_id: constituentId,
-              // if this is the only email, make it primary
-              primary:
-                constituentEmailData.primary ||
-                (constituentEmailData.primary !== false && constituentEmailListResults.count === 0)
+        try {
+          const constituentEmailListResponse = await request(
+            `${SKY_API_BASE_URL}/constituents/${constituentId}/emailaddresses?include_inactive=true`,
+            {
+              method: 'get'
             }
-          })
-        } else {
-          // existing email
-          if (
-            existingEmail.inactive ||
-            constituentEmailData.do_not_email !== existingEmail.do_not_email ||
-            constituentEmailData.primary !== existingEmail.primary ||
-            constituentEmailData.type !== existingEmail.type
-          ) {
-            // request has at least one email field to update
-            // update email
-            await request(`${SKY_API_BASE_URL}/emailaddresses/${existingEmail.id}`, {
-              method: 'patch',
+          )
+          const constituentEmailListResults = await constituentEmailListResponse.json()
+
+          // check email list for one that matches request
+          let existingEmail = undefined
+          if (constituentEmailListResults.count > 0) {
+            existingEmail = constituentEmailListResults.value.filter((result) => {
+              return result.address.toLowerCase() === constituentEmailData.address.toLowerCase()
+            })
+          }
+
+          if (!existingEmail) {
+            // new email
+            // create email
+            await request(`${SKY_API_BASE_URL}/emailaddresses`, {
+              method: 'post',
               json: {
                 ...constituentEmailData,
-                inactive: false
+                constituent_id: constituentId,
+                // if this is the only email, make it primary
+                primary:
+                  constituentEmailData.primary ||
+                  (constituentEmailData.primary !== false && constituentEmailListResults.count === 0)
               }
             })
+          } else {
+            // existing email
+            if (
+              existingEmail.inactive ||
+              constituentEmailData.do_not_email !== existingEmail.do_not_email ||
+              constituentEmailData.primary !== existingEmail.primary ||
+              constituentEmailData.type !== existingEmail.type
+            ) {
+              // request has at least one email field to update
+              // update email
+              await request(`${SKY_API_BASE_URL}/emailaddresses/${existingEmail.id}`, {
+                method: 'patch',
+                json: {
+                  ...constituentEmailData,
+                  inactive: false
+                }
+              })
+            }
+          }
+        } catch (error) {
+          const statusCode = error?.response?.status
+          if (statusCode === 429 || statusCode >= 500) {
+            retryableErrors.push(`${statusCode} error occurred when updating constituent email`)
+          } else {
+            integrationErrors.push('Error occurred when updating constituent email')
           }
         }
       }
@@ -577,52 +609,61 @@ const action: ActionDefinition<Settings, Payload> = {
       if (constituentOnlinePresenceData) {
         // request has online presence data
         // get existing online presences
-        const constituentOnlinePresenceListResponse = await request(
-          `${SKY_API_BASE_URL}/constituents/${constituentId}/onlinepresences?include_inactive=true`,
-          {
-            method: 'get'
-          }
-        )
-        const constituentOnlinePresenceListResults = await constituentOnlinePresenceListResponse.json()
-
-        // check online presence list for one that matches request
-        let existingOnlinePresence = undefined
-        if (constituentOnlinePresenceListResults.count > 0) {
-          existingOnlinePresence = constituentOnlinePresenceListResults.value.filter((result) => {
-            return result.address.toLowerCase() === constituentOnlinePresenceData.address.toLowerCase()
-          })
-        }
-
-        if (!existingOnlinePresence) {
-          // new online presence
-          // create online presence
-          await request(`${SKY_API_BASE_URL}/onlinepresences`, {
-            method: 'post',
-            json: {
-              ...constituentOnlinePresenceData,
-              constituent_id: constituentId,
-              // if this is the only online presence, make it primary
-              primary:
-                constituentOnlinePresenceData.primary ||
-                (constituentOnlinePresenceData.primary !== false && constituentOnlinePresenceListResults.count === 0)
+        try {
+          const constituentOnlinePresenceListResponse = await request(
+            `${SKY_API_BASE_URL}/constituents/${constituentId}/onlinepresences?include_inactive=true`,
+            {
+              method: 'get'
             }
-          })
-        } else {
-          // existing online presence
-          if (
-            existingOnlinePresence.inactive ||
-            constituentOnlinePresenceData.primary !== existingOnlinePresence.primary ||
-            constituentOnlinePresenceData.type !== existingOnlinePresence.type
-          ) {
-            // request has at least one online presence field to update
-            // update online presence
-            await request(`${SKY_API_BASE_URL}/onlinepresences/${existingOnlinePresence.id}`, {
-              method: 'patch',
+          )
+          const constituentOnlinePresenceListResults = await constituentOnlinePresenceListResponse.json()
+
+          // check online presence list for one that matches request
+          let existingOnlinePresence = undefined
+          if (constituentOnlinePresenceListResults.count > 0) {
+            existingOnlinePresence = constituentOnlinePresenceListResults.value.filter((result) => {
+              return result.address.toLowerCase() === constituentOnlinePresenceData.address.toLowerCase()
+            })
+          }
+
+          if (!existingOnlinePresence) {
+            // new online presence
+            // create online presence
+            await request(`${SKY_API_BASE_URL}/onlinepresences`, {
+              method: 'post',
               json: {
                 ...constituentOnlinePresenceData,
-                inactive: false
+                constituent_id: constituentId,
+                // if this is the only online presence, make it primary
+                primary:
+                  constituentOnlinePresenceData.primary ||
+                  (constituentOnlinePresenceData.primary !== false && constituentOnlinePresenceListResults.count === 0)
               }
             })
+          } else {
+            // existing online presence
+            if (
+              existingOnlinePresence.inactive ||
+              constituentOnlinePresenceData.primary !== existingOnlinePresence.primary ||
+              constituentOnlinePresenceData.type !== existingOnlinePresence.type
+            ) {
+              // request has at least one online presence field to update
+              // update online presence
+              await request(`${SKY_API_BASE_URL}/onlinepresences/${existingOnlinePresence.id}`, {
+                method: 'patch',
+                json: {
+                  ...constituentOnlinePresenceData,
+                  inactive: false
+                }
+              })
+            }
+          }
+        } catch (error) {
+          const statusCode = error?.response?.status
+          if (statusCode === 429 || statusCode >= 500) {
+            retryableErrors.push(`${statusCode} error occurred when updating constituent online presence`)
+          } else {
+            integrationErrors.push('Error occurred when updating constituent online presence')
           }
         }
       }
@@ -630,59 +671,79 @@ const action: ActionDefinition<Settings, Payload> = {
       if (constituentPhoneData) {
         // request has phone data
         // get existing phones
-        const constituentPhoneListResponse = await request(
-          `${SKY_API_BASE_URL}/constituents/${constituentId}/phones?include_inactive=true`,
-          {
-            method: 'get'
-          }
-        )
-        const constituentPhoneListResults = await constituentPhoneListResponse.json()
-
-        // check phone list for one that matches request
-        let existingPhone = undefined
-        if (constituentPhoneListResults.count > 0) {
-          existingPhone = constituentPhoneListResults.value.filter((result) => {
-            return result.number === constituentPhoneData.number
-          })
-        }
-
-        if (!existingPhone) {
-          // new phone
-          // create phone
-          await request(`${SKY_API_BASE_URL}/phones`, {
-            method: 'post',
-            json: {
-              ...constituentPhoneData,
-              constituent_id: constituentId,
-              // if this is the only phone, make it primary
-              primary:
-                constituentPhoneData.primary ||
-                (constituentPhoneData.primary !== false && constituentPhoneListResults.count === 0)
+        try {
+          const constituentPhoneListResponse = await request(
+            `${SKY_API_BASE_URL}/constituents/${constituentId}/phones?include_inactive=true`,
+            {
+              method: 'get'
             }
-          })
-        } else {
-          // existing phone
-          if (
-            existingPhone.inactive ||
-            constituentPhoneData.do_not_call !== existingPhone.do_not_call ||
-            constituentPhoneData.primary !== existingPhone.primary ||
-            constituentPhoneData.type !== existingPhone.type
-          ) {
-            // request has at least one phone field to update
-            // update phone
-            await request(`${SKY_API_BASE_URL}/phones/${existingPhone.id}`, {
-              method: 'patch',
+          )
+          const constituentPhoneListResults = await constituentPhoneListResponse.json()
+
+          // check phone list for one that matches request
+          let existingPhone = undefined
+          if (constituentPhoneListResults.count > 0) {
+            existingPhone = constituentPhoneListResults.value.filter((result) => {
+              return result.number === constituentPhoneData.number
+            })
+          }
+
+          if (!existingPhone) {
+            // new phone
+            // create phone
+            await request(`${SKY_API_BASE_URL}/phones`, {
+              method: 'post',
               json: {
                 ...constituentPhoneData,
-                inactive: false
+                constituent_id: constituentId,
+                // if this is the only phone, make it primary
+                primary:
+                  constituentPhoneData.primary ||
+                  (constituentPhoneData.primary !== false && constituentPhoneListResults.count === 0)
               }
             })
+          } else {
+            // existing phone
+            if (
+              existingPhone.inactive ||
+              constituentPhoneData.do_not_call !== existingPhone.do_not_call ||
+              constituentPhoneData.primary !== existingPhone.primary ||
+              constituentPhoneData.type !== existingPhone.type
+            ) {
+              // request has at least one phone field to update
+              // update phone
+              await request(`${SKY_API_BASE_URL}/phones/${existingPhone.id}`, {
+                method: 'patch',
+                json: {
+                  ...constituentPhoneData,
+                  inactive: false
+                }
+              })
+            }
+          }
+        } catch (error) {
+          const statusCode = error?.response?.status
+          if (statusCode === 429 || statusCode >= 500) {
+            retryableErrors.push(`${statusCode} error occurred when updating constituent phone`)
+          } else {
+            integrationErrors.push('Error occurred when updating constituent phone')
           }
         }
       }
-    }
 
-    return
+      if (integrationErrors.length > 0) {
+        throw new IntegrationError(
+          'One or more errors occurred when updating existing constituent: ' +
+            integrationErrors.concat(retryableErrors).join(', ')
+        )
+      } else if (retryableErrors.length > 0) {
+        throw new RetryableError(
+          'One or more errors occurred when updating existing constituent: ' + retryableErrors.join(', ')
+        )
+      }
+
+      return
+    }
   }
 }
 
