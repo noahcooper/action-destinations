@@ -2,6 +2,7 @@ import { ActionDefinition, IntegrationError, RetryableError } from '@segment/act
 import type { Settings } from '../generated-types'
 import type { Payload } from './generated-types'
 import { SKY_API_BASE_URL } from '../constants'
+import { isRequestErrorRetryable } from '../utils'
 
 const action: ActionDefinition<Settings, Payload> = {
   title: 'Create or Update Individual Constituent',
@@ -356,7 +357,7 @@ const action: ActionDefinition<Settings, Payload> = {
         const errorMessage = statusCode
           ? `${statusCode} error occurred when searching for constituent`
           : 'Error occurred when searching for constituent'
-        if (statusCode === 401 || statusCode === 429 || statusCode >= 500) {
+        if (isRequestErrorRetryable(statusCode)) {
           throw new RetryableError(errorMessage)
         } else {
           throw new IntegrationError(errorMessage, 'CONSTITUENT_SEARCH_ERROR', statusCode || 500)
@@ -453,7 +454,7 @@ const action: ActionDefinition<Settings, Payload> = {
           const errorMessage = statusCode
             ? `${statusCode} error occurred when creating constituent`
             : 'Error occurred when creating constituent'
-          if (statusCode === 401 || statusCode === 429 || statusCode >= 500) {
+          if (isRequestErrorRetryable(statusCode)) {
             throw new RetryableError(errorMessage)
           } else {
             throw new IntegrationError(errorMessage, 'CREATE_CONSTITUENT_ERROR', statusCode || 500)
@@ -480,7 +481,7 @@ const action: ActionDefinition<Settings, Payload> = {
           const errorMessage = statusCode
             ? `${statusCode} error occurred when updating constituent`
             : 'Error occurred when updating constituent'
-          if (statusCode === 401 || statusCode === 429 || statusCode >= 500) {
+          if (isRequestErrorRetryable(statusCode)) {
             retryableErrors.push(errorMessage)
           } else {
             integrationErrors.push(errorMessage)
@@ -552,7 +553,7 @@ const action: ActionDefinition<Settings, Payload> = {
           const errorMessage = statusCode
             ? `${statusCode} error occurred when updating constituent address`
             : 'Error occurred when updating constituent address'
-          if (statusCode === 401 || statusCode === 429 || statusCode >= 500) {
+          if (isRequestErrorRetryable(statusCode)) {
             retryableErrors.push(errorMessage)
           } else {
             integrationErrors.push(errorMessage)
@@ -618,7 +619,7 @@ const action: ActionDefinition<Settings, Payload> = {
           const errorMessage = statusCode
             ? `${statusCode} error occurred when updating constituent email`
             : 'Error occurred when updating constituent email'
-          if (statusCode === 401 || statusCode === 429 || statusCode >= 500) {
+          if (isRequestErrorRetryable(statusCode)) {
             retryableErrors.push(errorMessage)
           } else {
             integrationErrors.push(errorMessage)
@@ -683,7 +684,7 @@ const action: ActionDefinition<Settings, Payload> = {
           const errorMessage = statusCode
             ? `${statusCode} error occurred when updating constituent online presence`
             : 'Error occurred when updating constituent online presence'
-          if (statusCode === 401 || statusCode === 429 || statusCode >= 500) {
+          if (isRequestErrorRetryable(statusCode)) {
             retryableErrors.push(errorMessage)
           } else {
             integrationErrors.push(errorMessage)
@@ -749,7 +750,7 @@ const action: ActionDefinition<Settings, Payload> = {
           const errorMessage = statusCode
             ? `${statusCode} error occurred when updating constituent phone`
             : 'Error occurred when updating constituent phone'
-          if (statusCode === 401 || statusCode === 429 || statusCode >= 500) {
+          if (isRequestErrorRetryable(statusCode)) {
             retryableErrors.push(errorMessage)
           } else {
             integrationErrors.push(errorMessage)
