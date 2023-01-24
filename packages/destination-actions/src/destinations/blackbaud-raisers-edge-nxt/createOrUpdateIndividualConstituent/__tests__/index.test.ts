@@ -545,7 +545,7 @@ describe('BlackbaudRaisersEdgeNxt.createOrUpdateIndividualConstituent', () => {
       })
     ).rejects.toThrowError(
       new IntegrationError(
-        'One or more errors occurred when updating existing constituent: Error occurred when updating constituent online presence',
+        'One or more errors occurred when updating existing constituent: 400 error occurred when updating constituent online presence',
         'UPDATE_CONSTITUENT_ERROR',
         500
       )
