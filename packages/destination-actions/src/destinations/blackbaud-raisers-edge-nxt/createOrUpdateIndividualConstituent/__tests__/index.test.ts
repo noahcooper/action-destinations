@@ -140,7 +140,7 @@ describe('BlackbaudRaisersEdgeNxt.createOrUpdateIndividualConstituent', () => {
   })
 
   test('should update an existing constituent matched by email successfully', async () => {
-    const identifyEventDataWithUpdates = {
+    const identifyEventDataWithUpdates: Partial<SegmentEvent> = {
       ...identifyEventData,
       traits: {
         ...identifyEventData.traits,
@@ -497,17 +497,10 @@ describe('BlackbaudRaisersEdgeNxt.createOrUpdateIndividualConstituent', () => {
   })
 
   test('should throw a RetryableError if constituent search returns a 429', async () => {
-    const identifyEventDataNoLastName: Partial<SegmentEvent> = {
-      type: 'identify',
-      traits: {
-        email: 'john@example.org'
-      }
-    }
-
-    const event = createTestEvent(identifyEventDataNoLastName)
+    const event = createTestEvent(identifyEventData)
 
     nock(SKY_API_BASE_URL)
-      .get('/constituents/search?search_field=email_address&search_text=john@example.org')
+      .get('/constituents/search?search_field=email_address&search_text=john@example.biz')
       .reply(429)
 
     await expect(
@@ -545,8 +538,54 @@ describe('BlackbaudRaisersEdgeNxt.createOrUpdateIndividualConstituent', () => {
     ).rejects.toThrowError('Missing last name value')
   })
 
+  test('should throw a RetryableError if creating new constituent returns a 429', async () => {
+    const event = createTestEvent(identifyEventData)
+
+    const constituentPayload = {
+      address: {
+        address_lines: 'PO Box 963',
+        city: 'New York City',
+        state: 'NY',
+        postal_code: '10108',
+        type: 'Home'
+      },
+      email: {
+        address: 'john@example.biz',
+        type: 'Personal'
+      },
+      first: 'John',
+      last: 'Doe',
+      online_presence: {
+        address: 'https://www.facebook.com/john.doe',
+        type: 'Facebook'
+      },
+      phone: {
+        number: '+18774466722',
+        type: 'Home'
+      },
+      type: 'Individual'
+    }
+
+    nock(SKY_API_BASE_URL)
+      .get('/constituents/search?search_field=email_address&search_text=john@example.biz')
+      .reply(200, {
+        count: 0,
+        value: []
+      })
+
+    nock(SKY_API_BASE_URL).post('/constituents', constituentPayload).reply(429)
+
+    await expect(
+      testDestination.testAction('createOrUpdateIndividualConstituent', {
+        event,
+        mapping,
+        useDefaultMappings: true
+      })
+    ).rejects.toThrowError('429 error occurred when creating constituent')
+  })
+
   test('should throw an IntegrationError if one or more request returns a 400 when updating an existing constituent', async () => {
-    const identifyEventDataWithUpdates = {
+    const identifyEventDataWithUpdates: Partial<SegmentEvent> = {
       ...identifyEventData,
       traits: {
         ...identifyEventData.traits,
@@ -721,7 +760,7 @@ describe('BlackbaudRaisersEdgeNxt.createOrUpdateIndividualConstituent', () => {
   })
 
   test('should throw a RetryableError if one or more request returns a 429 when updating an existing constituent', async () => {
-    const identifyEventDataWithUpdates = {
+    const identifyEventDataWithUpdates: Partial<SegmentEvent> = {
       ...identifyEventData,
       traits: {
         ...identifyEventData.traits,

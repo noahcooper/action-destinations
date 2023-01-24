@@ -444,10 +444,23 @@ const action: ActionDefinition<Settings, Payload> = {
         }
 
         // create constituent
-        await request(`${SKY_API_BASE_URL}/constituents`, {
-          method: 'post',
-          json: constituentData
-        })
+        try {
+          await request(`${SKY_API_BASE_URL}/constituents`, {
+            method: 'post',
+            json: constituentData
+          })
+        } catch (error) {
+          const statusCode = error?.response?.status
+          if (statusCode === 429 || statusCode >= 500) {
+            throw new RetryableError(`${statusCode} error occurred when creating constituent`)
+          } else {
+            throw new IntegrationError(
+              'Error occurred when creating constituent',
+              'CREATE_CONSTITUENT_ERROR',
+              statusCode || 500
+            )
+          }
+        }
       }
 
       return
@@ -734,7 +747,9 @@ const action: ActionDefinition<Settings, Payload> = {
       if (integrationErrors.length > 0) {
         throw new IntegrationError(
           'One or more errors occurred when updating existing constituent: ' +
-            integrationErrors.concat(retryableErrors).join(', ')
+            integrationErrors.concat(retryableErrors).join(', '),
+          'UPDATE_CONSTITUENT_ERROR',
+          500
         )
       } else if (retryableErrors.length > 0) {
         throw new RetryableError(
