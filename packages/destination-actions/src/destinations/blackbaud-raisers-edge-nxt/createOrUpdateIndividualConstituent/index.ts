@@ -353,7 +353,7 @@ const action: ActionDefinition<Settings, Payload> = {
         }
       } catch (error) {
         const statusCode = error?.response?.status
-        if (statusCode === 429 || statusCode >= 500) {
+        if (statusCode === 401 || statusCode === 429 || statusCode >= 500) {
           throw new RetryableError(`${statusCode} error occurred when searching for constituent`)
         } else {
           throw new IntegrationError(
@@ -451,7 +451,7 @@ const action: ActionDefinition<Settings, Payload> = {
           })
         } catch (error) {
           const statusCode = error?.response?.status
-          if (statusCode === 429 || statusCode >= 500) {
+          if (statusCode === 401 || statusCode === 429 || statusCode >= 500) {
             throw new RetryableError(`${statusCode} error occurred when creating constituent`)
           } else {
             throw new IntegrationError(
@@ -479,7 +479,7 @@ const action: ActionDefinition<Settings, Payload> = {
           })
         } catch (error) {
           const statusCode = error?.response?.status
-          if (statusCode === 429 || statusCode >= 500) {
+          if (statusCode === 401 || statusCode === 429 || statusCode >= 500) {
             retryableErrors.push(`${statusCode} error occurred when updating constituent`)
           } else {
             integrationErrors.push('Error occurred when updating constituent')
@@ -548,7 +548,7 @@ const action: ActionDefinition<Settings, Payload> = {
           }
         } catch (error) {
           const statusCode = error?.response?.status
-          if (statusCode === 429 || statusCode >= 500) {
+          if (statusCode === 401 || statusCode === 429 || statusCode >= 500) {
             retryableErrors.push(`${statusCode} error occurred when updating constituent address`)
           } else {
             integrationErrors.push('Error occurred when updating constituent address')
@@ -611,7 +611,7 @@ const action: ActionDefinition<Settings, Payload> = {
           }
         } catch (error) {
           const statusCode = error?.response?.status
-          if (statusCode === 429 || statusCode >= 500) {
+          if (statusCode === 401 || statusCode === 429 || statusCode >= 500) {
             retryableErrors.push(`${statusCode} error occurred when updating constituent email`)
           } else {
             integrationErrors.push('Error occurred when updating constituent email')
@@ -673,7 +673,7 @@ const action: ActionDefinition<Settings, Payload> = {
           }
         } catch (error) {
           const statusCode = error?.response?.status
-          if (statusCode === 429 || statusCode >= 500) {
+          if (statusCode === 401 || statusCode === 429 || statusCode >= 500) {
             retryableErrors.push(`${statusCode} error occurred when updating constituent online presence`)
           } else {
             integrationErrors.push('Error occurred when updating constituent online presence')
@@ -736,7 +736,7 @@ const action: ActionDefinition<Settings, Payload> = {
           }
         } catch (error) {
           const statusCode = error?.response?.status
-          if (statusCode === 429 || statusCode >= 500) {
+          if (statusCode === 401 || statusCode === 429 || statusCode >= 500) {
             retryableErrors.push(`${statusCode} error occurred when updating constituent phone`)
           } else {
             integrationErrors.push('Error occurred when updating constituent phone')
