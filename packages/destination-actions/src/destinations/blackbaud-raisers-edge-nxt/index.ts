@@ -26,9 +26,6 @@ const destination: DestinationDefinition<Settings> = {
       // Return a request that refreshes the access_token if the API supports it
       const res = await request<RefreshTokenResponse>(SKY_OAUTH2_TOKEN_URL, {
         method: 'POST',
-        headers: {
-          'content-type': 'application/x-www-form-urlencoded'
-        },
         body: new URLSearchParams({
           grant_type: 'refresh_token',
           refresh_token: auth.refreshToken,
