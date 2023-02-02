@@ -163,7 +163,7 @@ export class BlackbaudSkyApi {
   async getConstituentGiftList(
     constituentId: string,
     fundId: string,
-    giftAmount: string,
+    giftAmount: number,
     giftDate: string
   ): Promise<ModifiedResponse> {
     return this.request(

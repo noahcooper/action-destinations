@@ -5,7 +5,7 @@ export interface Payload {
    * The monetary amount of the gift.
    */
   amount: {
-    value: string
+    value: number
   }
   /**
    * The check date in ISO-8601 format.

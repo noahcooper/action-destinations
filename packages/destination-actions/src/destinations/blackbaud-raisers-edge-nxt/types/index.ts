@@ -72,7 +72,7 @@ export interface Gift {
 }
 
 export interface GiftAmount {
-  value: string
+  value: number
 }
 
 export interface GiftSplit {

@@ -18,7 +18,7 @@ const action: ActionDefinition<Settings, Payload> = {
       properties: {
         value: {
           label: 'Value',
-          type: 'string',
+          type: 'number',
           required: true
         }
       },
