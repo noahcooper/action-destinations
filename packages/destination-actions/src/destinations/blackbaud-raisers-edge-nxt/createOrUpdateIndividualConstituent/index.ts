@@ -350,7 +350,11 @@ const action: ActionDefinition<Settings, Payload> = {
         constituentId = constituentSearchResults.value[0].id
       } else if (constituentSearchResults.count !== 0) {
         // if constituent count is not >= 0, something went wrong
-        throw new IntegrationError('Unexpected record count for given traits', 'UNEXPECTED_RECORD_COUNT', 500)
+        throw new IntegrationError(
+          'Unexpected constituent record count for given traits',
+          'UNEXPECTED_RECORD_COUNT',
+          500
+        )
       }
     }
 

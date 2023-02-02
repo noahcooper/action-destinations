@@ -1,4 +1,4 @@
-export const dateStringToFuzzyDate = (dateString: string) => {
+export const dateStringToFuzzyDate = (dateString: string | number) => {
   const date = new Date(dateString)
   if (isNaN(date)) {
     // invalid date object
@@ -27,8 +27,8 @@ export const filterObjectListByMatchFields = (list: object[], data: object, matc
         let itemValue = item[fieldName] ? item[fieldName].toLowerCase() : ''
         let dataValue = data[fieldName] ? data[fieldName].toLowerCase() : ''
         if (field.startsWith('int:')) {
-          itemValue = itemValue.replace(/\D/g,'')
-          dataValue = dataValue.replace(/\D/g,'')
+          itemValue = itemValue.replace(/\D/g, '')
+          dataValue = dataValue.replace(/\D/g, '')
         }
         isMatch = itemValue === dataValue
       }

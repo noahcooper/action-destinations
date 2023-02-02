@@ -52,3 +52,42 @@ export interface Phone {
   primary?: boolean
   type?: string
 }
+
+export interface Gift {
+  amount: GiftAmount
+  constituent_id: string
+  date: string | number
+  gift_splits: GiftSplit[]
+  gift_status?: string
+  is_anonymous?: boolean
+  is_manual: boolean
+  // TODO: linked_gifts
+  lookup_id?: string
+  payments: GiftPayment[]
+  post_date?: string | number
+  post_status?: string
+  recurring_gift_schedule?: RecurringGiftSchedule
+  subtype?: string
+  type: string
+}
+
+export interface GiftAmount {
+  value: string
+}
+
+export interface GiftSplit {
+  amount: string
+  fund_id: string
+}
+
+export interface GiftPayment {
+  check_date?: FuzzyDate
+  check_number?: string
+  payment_method: string
+}
+
+export interface RecurringGiftSchedule {
+  end_date?: string | number
+  frequency: string
+  start_date: string | number
+}
