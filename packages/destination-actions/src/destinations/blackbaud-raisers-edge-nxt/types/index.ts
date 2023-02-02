@@ -67,6 +67,7 @@ export interface Gift {
   payments: GiftPayment[]
   post_date?: string | number
   post_status?: string
+  receipts?: GiftReceipt[]
   recurring_gift_schedule?: RecurringGiftSchedule
   subtype?: string
   type: string
@@ -90,6 +91,11 @@ export interface GiftPayment {
   check_date?: FuzzyDate
   check_number?: string
   payment_method: string
+}
+
+export interface GiftReceipt {
+  date?: string | number
+  status?: string
 }
 
 export interface RecurringGiftSchedule {

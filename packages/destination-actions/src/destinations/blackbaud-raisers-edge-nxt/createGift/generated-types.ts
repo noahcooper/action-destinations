@@ -63,6 +63,13 @@ export interface Payload {
    */
   post_status?: string
   /**
+   * The gift receipt.
+   */
+  receipt?: {
+    date?: string | number
+    status?: string
+  }
+  /**
    * The recurring gift schedule. When adding a recurring gift, a schedule is required.
    */
   recurring_gift_schedule?: {

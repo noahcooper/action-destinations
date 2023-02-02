@@ -2,7 +2,7 @@ import { ActionDefinition } from '@segment/actions-core'
 import type { Settings } from '../generated-types'
 import type { Payload } from './generated-types'
 import { BlackbaudSkyApi } from '../api'
-import { Gift, GiftAcknowledgement } from '../types'
+import { Gift, GiftAcknowledgement, GiftReceipt } from '../types'
 import { dateStringToFuzzyDate } from '../utils'
 
 const action: ActionDefinition<Settings, Payload> = {
@@ -112,6 +112,25 @@ const action: ActionDefinition<Settings, Payload> = {
       description:
         'The general ledger post status of the gift. Available values are "Posted", "NotPosted", and "DoNotPost".',
       type: 'string'
+    },
+    receipt: {
+      label: 'Receipt',
+      description: 'The gift receipt.',
+      type: 'object',
+      properties: {
+        date: {
+          label: 'Date',
+          type: 'datetime'
+        },
+        status: {
+          label: 'Status',
+          type: 'string'
+        }
+      },
+      default: {
+        date: '',
+        status: ''
+      }
     },
     recurring_gift_schedule: {
       label: 'Recurring Gift Schedule',
@@ -225,6 +244,17 @@ const action: ActionDefinition<Settings, Payload> = {
     }
     if ((giftData.post_status === 'NotPosted' || giftData.post_status === 'Posted') && !giftData.post_date) {
       giftData.post_date = payload.date
+    }
+
+    // create receipts array
+    if (payload.receipt) {
+      const receiptData: GiftReceipt = {
+        status: payload.receipt.status || 'NEEDSRECEIPT'
+      }
+      if (receiptData.status !== 'NEEDSRECEIPT' && receiptData.status !== 'DONOTRECEIPT' && payload.receipt.date) {
+        receiptData.date = payload.receipt.date
+      }
+      giftData.receipts = [receiptData]
     }
 
     // fields for recurring gifts
