@@ -133,92 +133,77 @@ const action: ActionDefinition<Settings, Payload> = {
   perform: async (request, { payload }) => {
     const blackbaudSkyApiClient: BlackbaudSkyApi = new BlackbaudSkyApi(request)
 
-    // search for existing gift
-    const getConstituentGiftListResponse = await blackbaudSkyApiClient.getConstituentGiftList(
-      payload.constituent_id,
-      payload.fund_id,
-      payload.amount.value,
-      payload.date
-    )
-    const constituentGiftResults = await getConstituentGiftListResponse.json()
-
-    if (constituentGiftResults.count >= 1) {
-      // existing gift
-      return
-    } else if (constituentGiftResults.count !== 0) {
-      // if gift count is not >= 0, something went wrong
-      throw new IntegrationError('Unexpected gift record count for given properties', 'UNEXPECTED_RECORD_COUNT', 500)
-    } else {
-      // new gift
-      const giftData: Gift = {}
-      giftData.is_manual = true
-      const simpleGiftFields = [
-        'amount',
-        'constituent_id',
-        'date',
-        'gift_status',
-        'is_anonymous',
-        'lookup_id',
-        'post_date',
-        'post_status',
-        'subtype',
-        'type'
-      ]
-      simpleGiftFields.forEach((key) => {
-        if (payload[key] !== undefined) {
-          giftData[key] = payload[key]
-        }
-      })
-
-      // default type
-      if (!giftData.type) {
-        giftData.type = 'Donation'
+    // data for gift call
+    const giftData: Gift = {}
+    giftData.is_manual = true
+    const simpleGiftFields = [
+      'amount',
+      'constituent_id',
+      'date',
+      'gift_status',
+      'is_anonymous',
+      'lookup_id',
+      'post_date',
+      'post_status',
+      'subtype',
+      'type'
+    ]
+    simpleGiftFields.forEach((key) => {
+      if (payload[key] !== undefined) {
+        giftData[key] = payload[key]
       }
+    })
 
-      // create gift splits array
-      giftData.gift_splits = [
-        {
-          amount: giftData.amount,
-          fund_id: payload.fund_id
-        }
-      ]
-
-      // create payments array
-      giftData.payments = [
-        {
-          payment_method: payload.payment_method
-        }
-      ]
-
-      // fields for check gifts
-      if (giftData.payments[0].payment_method === 'PersonalCheck') {
-        giftData.payments[0].check_number = payload.check_number
-        if (payload.check_date) {
-          const checkDateFuzzyDate = dateStringToFuzzyDate(payload.check_date)
-          if (checkDateFuzzyDate) {
-            giftData.payments[0].check_date = checkDateFuzzyDate
-          }
-        }
-      }
-
-      // default post status and date
-      if (!giftData.post_status) {
-        giftData.post_status = 'NotPosted'
-      }
-      if ((giftData.post_status === 'NotPosted' || giftData.post_status === 'Posted') && !giftData.post_date) {
-        giftData.post_date = payload.date
-      }
-
-      // fields for recurring gifts
-      if (giftData.type === 'RecurringGift') {
-        giftData.recurring_gift_schedule = payload.recurring_gift_schedule
-      } else if (giftData.type === 'RecurringGiftPayment') {
-        giftData.linked_gifts = payload.linked_gifts
-      }
-
-      // create gift
-      return blackbaudSkyApiClient.createGift(giftData)
+    // default type
+    if (!giftData.type) {
+      giftData.type = 'Donation'
     }
+
+    // create gift splits array
+    giftData.gift_splits = [
+      {
+        amount: giftData.amount,
+        fund_id: payload.fund_id
+      }
+    ]
+
+    // create payments array
+    giftData.payments = [
+      {
+        payment_method: payload.payment_method
+      }
+    ]
+
+    // fields for check gifts
+    if (giftData.payments[0].payment_method === 'PersonalCheck') {
+      giftData.payments[0].check_number = payload.check_number
+      if (payload.check_date) {
+        const checkDateFuzzyDate = dateStringToFuzzyDate(payload.check_date)
+        if (checkDateFuzzyDate) {
+          giftData.payments[0].check_date = checkDateFuzzyDate
+        }
+      }
+    }
+
+    // default post status and date
+    if (!giftData.post_status) {
+      giftData.post_status = 'NotPosted'
+    }
+    if ((giftData.post_status === 'NotPosted' || giftData.post_status === 'Posted') && !giftData.post_date) {
+      giftData.post_date = payload.date
+    }
+
+    // fields for recurring gifts
+    if (giftData.type === 'RecurringGift') {
+      giftData.recurring_gift_schedule = payload.recurring_gift_schedule
+    } else if (giftData.type === 'RecurringGiftPayment') {
+      giftData.linked_gifts = payload.linked_gifts
+    }
+
+    // create gift
+    await blackbaudSkyApiClient.createGift(giftData)
+
+    return
   }
 }
 
