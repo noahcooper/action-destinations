@@ -167,7 +167,7 @@ export class BlackbaudSkyApi {
     giftDate: string
   ): Promise<ModifiedResponse> {
     return this.request(
-      `${SKY_API_GIFTS_URL}/gift/v1/gifts?constituent_id=${constituentId}&fund_id=${fundId}&start_gift_amount=${giftAmount}&end_gift_date=${giftAmount}&start_gift_date=${giftDate}&end_gift_date=${giftDate}`,
+      `${SKY_API_GIFTS_URL}/gifts?constituent_id=${constituentId}&fund_id=${fundId}&start_gift_amount=${giftAmount}&end_gift_date=${giftAmount}&start_gift_date=${giftDate}&end_gift_date=${giftDate}`,
       {
         method: 'get'
       }
@@ -175,7 +175,7 @@ export class BlackbaudSkyApi {
   }
 
   async createGift(giftData: object): Promise<ModifiedResponse> {
-    return this.request(`${SKY_API_GIFTS_URL}/gift/v1/gifts`, {
+    return this.request(`${SKY_API_GIFTS_URL}/gifts`, {
       method: 'post',
       json: giftData
     })
