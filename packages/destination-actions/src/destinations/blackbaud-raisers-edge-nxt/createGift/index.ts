@@ -178,7 +178,7 @@ const action: ActionDefinition<Settings, Payload> = {
       // create gift splits array
       giftData.gift_splits = [
         {
-          amount: giftData.amount.value,
+          amount: giftData.amount,
           fund_id: payload.fund_id
         }
       ]
