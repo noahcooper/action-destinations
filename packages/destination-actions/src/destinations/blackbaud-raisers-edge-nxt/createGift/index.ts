@@ -66,7 +66,11 @@ const action: ActionDefinition<Settings, Payload> = {
       description: 'Indicates whether the gift is anonymous.',
       type: 'boolean'
     },
-    // TODO: linked_gifts
+    linked_gifts: {
+      label: 'Linked Gifts',
+      description: 'The recurring gift associated with the payment being added.',
+      type: 'array'
+    },
     lookup_id: {
       label: 'Lookup ID',
       description: 'The organization-defined identifier for the gift.',
@@ -101,13 +105,11 @@ const action: ActionDefinition<Settings, Payload> = {
         },
         frequency: {
           label: 'Frequency',
-          type: 'string',
-          required: true
+          type: 'string'
         },
         start_date: {
           label: 'Start Date',
-          type: 'datetime',
-          required: true
+          type: 'datetime'
         }
       },
       default: {
@@ -159,7 +161,6 @@ const action: ActionDefinition<Settings, Payload> = {
         'lookup_id',
         'post_date',
         'post_status',
-        'recurring_gift_schedule',
         'subtype',
         'type'
       ]
@@ -177,7 +178,7 @@ const action: ActionDefinition<Settings, Payload> = {
       // create gift splits array
       giftData.gift_splits = [
         {
-          amount: payload.amount.value,
+          amount: giftData.amount.value,
           fund_id: payload.fund_id
         }
       ]
@@ -190,7 +191,7 @@ const action: ActionDefinition<Settings, Payload> = {
       ]
 
       // fields for check gifts
-      if (payload.payment_method === 'PersonalCheck') {
+      if (giftData.payments[0].payment_method === 'PersonalCheck') {
         giftData.payments[0].check_number = payload.check_number
         if (payload.check_date) {
           const checkDateFuzzyDate = dateStringToFuzzyDate(payload.check_date)
@@ -206,6 +207,13 @@ const action: ActionDefinition<Settings, Payload> = {
       }
       if ((giftData.post_status === 'NotPosted' || giftData.post_status === 'Posted') && !giftData.post_date) {
         giftData.post_date = payload.date
+      }
+
+      // fields for recurring gifts
+      if (giftData.type === 'RecurringGift') {
+        giftData.recurring_gift_schedule = payload.recurring_gift_schedule
+      } else if (giftData.type === 'RecurringGiftPayment') {
+        giftData.linked_gifts = payload.linked_gifts
       }
 
       // create gift

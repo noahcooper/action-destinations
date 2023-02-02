@@ -36,6 +36,10 @@ export interface Payload {
    */
   is_anonymous?: boolean
   /**
+   * The recurring gift associated with the payment being added.
+   */
+  linked_gifts?: unknown[]
+  /**
    * The organization-defined identifier for the gift.
    */
   lookup_id?: string
@@ -56,8 +60,8 @@ export interface Payload {
    */
   recurring_gift_schedule?: {
     end_date?: string | number
-    frequency: string
-    start_date: string | number
+    frequency?: string
+    start_date?: string | number
   }
   /**
    * The subtype of the gift.

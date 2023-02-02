@@ -61,7 +61,7 @@ export interface Gift {
   gift_status?: string
   is_anonymous?: boolean
   is_manual: boolean
-  // TODO: linked_gifts
+  linked_gifts?: string[]
   lookup_id?: string
   payments: GiftPayment[]
   post_date?: string | number
