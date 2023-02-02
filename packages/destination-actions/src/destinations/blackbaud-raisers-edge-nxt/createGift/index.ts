@@ -1,8 +1,8 @@
-import { ActionDefinition, IntegrationError } from '@segment/actions-core'
+import { ActionDefinition } from '@segment/actions-core'
 import type { Settings } from '../generated-types'
 import type { Payload } from './generated-types'
 import { BlackbaudSkyApi } from '../api'
-import { Gift } from '../types'
+import { Gift, GiftAcknowledgement } from '../types'
 import { dateStringToFuzzyDate } from '../utils'
 
 const action: ActionDefinition<Settings, Payload> = {
@@ -10,6 +10,25 @@ const action: ActionDefinition<Settings, Payload> = {
   description: "Create a Gift record in Raiser's Edge NXT.",
   defaultSubscription: 'type = "track" and event = "Donation Completed"',
   fields: {
+    acknowledgement: {
+      label: 'Acknowledgement',
+      description: 'The gift acknowledgement.',
+      type: 'object',
+      properties: {
+        date: {
+          label: 'Date',
+          type: 'datetime'
+        },
+        status: {
+          label: 'Status',
+          type: 'string'
+        }
+      },
+      default: {
+        date: '',
+        status: ''
+      }
+    },
     amount: {
       label: 'Gift Amount',
       description: 'The monetary amount of the gift.',
@@ -157,6 +176,21 @@ const action: ActionDefinition<Settings, Payload> = {
     // default type
     if (!giftData.type) {
       giftData.type = 'Donation'
+    }
+
+    // create acknowledgements array
+    if (payload.acknowledgement) {
+      const acknowledgementData: GiftAcknowledgement = {
+        status: payload.acknowledgement.status || 'NEEDSACKNOWLEDGEMENT'
+      }
+      if (
+        acknowledgementData.status !== 'NEEDSACKNOWLEDGEMENT' &&
+        acknowledgementData.status !== 'DONOTACKNOWLEDGE' &&
+        payload.acknowledgement.date
+      ) {
+        acknowledgementData.date = payload.acknowledgement.date
+      }
+      giftData.acknowledgements = [acknowledgementData]
     }
 
     // create gift splits array

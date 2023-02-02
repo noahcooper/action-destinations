@@ -2,6 +2,13 @@
 
 export interface Payload {
   /**
+   * The gift acknowledgement.
+   */
+  acknowledgement?: {
+    date?: string | number
+    status?: string
+  }
+  /**
    * The monetary amount of the gift.
    */
   amount: {

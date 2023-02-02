@@ -54,6 +54,7 @@ export interface Phone {
 }
 
 export interface Gift {
+  acknowledgements?: GiftAcknowledgement[]
   amount: GiftAmount
   constituent_id: string
   date: string | number
@@ -69,6 +70,11 @@ export interface Gift {
   recurring_gift_schedule?: RecurringGiftSchedule
   subtype?: string
   type: string
+}
+
+export interface GiftAcknowledgement {
+  date?: string | number
+  status?: string
 }
 
 export interface GiftAmount {
