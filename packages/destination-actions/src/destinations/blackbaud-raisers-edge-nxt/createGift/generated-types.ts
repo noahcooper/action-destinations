@@ -85,4 +85,67 @@ export interface Payload {
    * The gift type. Available values are "Donation", "Other", "GiftInKind", "RecurringGift", and "RecurringGiftPayment".
    */
   type?: string
+  /**
+   * The constituent's address.
+   */
+  constituent_address?: {
+    address_lines?: string
+    city?: string
+    country?: string
+    do_not_mail?: boolean
+    postal_code?: string
+    primary?: boolean
+    state?: string
+    type?: string
+  }
+  /**
+   * The constituent's birthdate.
+   */
+  constituent_birthdate?: string | number
+  /**
+   * The constituent's email address.
+   */
+  constituent_email?: {
+    address?: string
+    do_not_email?: boolean
+    primary?: boolean
+    type?: string
+  }
+  /**
+   * The constituent's first name up to 50 characters.
+   */
+  constituent_first?: string
+  /**
+   * The constituent's gender.
+   */
+  constituent_gender?: string
+  /**
+   * The constituent's income.
+   */
+  constituent_income?: string
+  /**
+   * The constituent's last name up to 100 characters. This is required to create a constituent.
+   */
+  constituent_last?: string
+  /**
+   * The organization-defined identifier for the constituent.
+   */
+  constituent_lookup_id?: string
+  /**
+   * The constituent's online presence.
+   */
+  constituent_online_presence?: {
+    address?: string
+    primary?: boolean
+    type?: string
+  }
+  /**
+   * The constituent's phone number.
+   */
+  constituent_phone?: {
+    do_not_call?: boolean
+    number?: string
+    primary?: boolean
+    type?: string
+  }
 }
