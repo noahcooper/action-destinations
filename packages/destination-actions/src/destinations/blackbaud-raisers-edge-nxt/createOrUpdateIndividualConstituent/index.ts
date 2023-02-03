@@ -5,7 +5,7 @@ import { BlackbaudSkyApi } from '../api'
 import { Address, Constituent, Email, OnlinePresence, Phone } from '../types'
 import { dateStringToFuzzyDate, filterObjectListByMatchFields, isRequestErrorRetryable } from '../utils'
 
-export const createOrUpdateIndividualConstituentFields = {
+export const fields = {
   address: {
     label: 'Address',
     description: "The constituent's address.",
@@ -320,428 +320,431 @@ export const createOrUpdateIndividualConstituentFields = {
   }
 }
 
+export const perform = async (request, { payload }) => {
+  const blackbaudSkyApiClient: BlackbaudSkyApi = new BlackbaudSkyApi(request)
+
+  // search for existing constituent
+  let constituentId = undefined
+  if (payload.email?.address || payload.lookup_id) {
+    // default to searching by email
+    let searchField = 'email_address'
+    let searchText = payload.email?.address || ''
+
+    if (payload.lookup_id) {
+      // search by lookup_id if one is provided
+      searchField = 'lookup_id'
+      searchText = payload.lookup_id
+    }
+
+    const constituentSearchResponse = await blackbaudSkyApiClient.getExistingConstituents(searchField, searchText)
+    const constituentSearchResults = await constituentSearchResponse.json()
+
+    if (constituentSearchResults.count > 1) {
+      // multiple existing constituents, throw an error
+      throw new IntegrationError('Multiple records returned for given traits', 'MULTIPLE_EXISTING_RECORDS', 400)
+    } else if (constituentSearchResults.count === 1) {
+      // existing constituent
+      constituentId = constituentSearchResults.value[0].id
+    } else if (constituentSearchResults.count !== 0) {
+      // if constituent count is not >= 0, something went wrong
+      throw new IntegrationError('Unexpected constituent record count for given traits', 'UNEXPECTED_RECORD_COUNT', 500)
+    }
+  }
+
+  // data for constituent call
+  const constituentData: Constituent = {}
+  const simpleConstituentFields = ['first', 'gender', 'income', 'last', 'lookup_id']
+  simpleConstituentFields.forEach((key: string) => {
+    if (payload[key] !== undefined) {
+      constituentData[key] = payload[key]
+    }
+  })
+  if (payload.birthdate) {
+    const birthdateFuzzyDate = dateStringToFuzzyDate(payload.birthdate)
+    if (birthdateFuzzyDate) {
+      constituentData.birthdate = birthdateFuzzyDate
+    }
+  }
+
+  // data for address call
+  let constituentAddressData: Address = {}
+  if (
+    payload.address &&
+    (payload.address.address_lines ||
+      payload.address.city ||
+      payload.address.country ||
+      payload.address.postal_code ||
+      payload.address.state) &&
+    payload.address.type
+  ) {
+    constituentAddressData = payload.address
+  }
+
+  // data for email call
+  let constituentEmailData: Email = {}
+  if (payload.email && payload.email.address && payload.email.type) {
+    constituentEmailData = payload.email
+  }
+
+  // data for online presence call
+  let constituentOnlinePresenceData: OnlinePresence = {}
+  if (payload.online_presence && payload.online_presence.address && payload.online_presence.type) {
+    constituentOnlinePresenceData = payload.online_presence
+  }
+
+  // data for phone call
+  let constituentPhoneData: Phone = {}
+  if (payload.phone && payload.phone.number && payload.phone.type) {
+    constituentPhoneData = payload.phone
+  }
+
+  if (!constituentId) {
+    // new constituent
+    // hardcode type
+    constituentData.type = 'Individual'
+    if (!constituentData.last) {
+      // last name is required to create a new constituent
+      // no last name, throw an error
+      throw new IntegrationError('Missing last name value', 'MISSING_REQUIRED_FIELD', 400)
+    }
+    // request has last name
+    // append other data objects to constituent
+    if (Object.keys(constituentAddressData).length > 0) {
+      constituentData.address = constituentAddressData
+    }
+    if (Object.keys(constituentEmailData).length > 0) {
+      constituentData.email = constituentEmailData
+    }
+    if (Object.keys(constituentOnlinePresenceData).length > 0) {
+      constituentData.online_presence = constituentOnlinePresenceData
+    }
+    if (Object.keys(constituentPhoneData).length > 0) {
+      constituentData.phone = constituentPhoneData
+    }
+
+    // create constituent
+    const createConstituentResponse = await blackbaudSkyApiClient.createConstituent(constituentData)
+    const constituentResult = await createConstituentResponse.json()
+
+    return Promise.resolve({
+      id: constituentResult.id
+    })
+  } else {
+    // existing constituent
+    // aggregate all errors
+    const integrationErrors = []
+    if (Object.keys(constituentData).length > 0) {
+      // request has at least one constituent field to update
+      // update constituent
+      const updateConstituentResponse = await blackbaudSkyApiClient.updateConstituent(constituentId, constituentData)
+      if (updateConstituentResponse.status !== 200) {
+        const statusCode = updateConstituentResponse.status
+        const errorMessage = statusCode
+          ? `${statusCode} error occurred when updating constituent`
+          : 'Error occurred when updating constituent'
+        if (isRequestErrorRetryable(statusCode)) {
+          throw new RetryableError(errorMessage)
+        } else {
+          integrationErrors.push(errorMessage)
+        }
+      }
+    }
+
+    if (Object.keys(constituentAddressData).length > 0) {
+      // request has address data
+      // get existing addresses
+      const getConstituentAddressListResponse = await blackbaudSkyApiClient.getConstituentAddressList(constituentId)
+      let updateAddressErrorCode = undefined
+      if (getConstituentAddressListResponse.status !== 200) {
+        updateAddressErrorCode = getConstituentAddressListResponse.status
+      } else {
+        const constituentAddressListResults = await getConstituentAddressListResponse.json()
+
+        // check address list for one that matches request
+        let existingAddress = undefined
+        if (constituentAddressListResults.count > 0) {
+          existingAddress = filterObjectListByMatchFields(constituentAddressListResults.value, constituentAddressData, [
+            'address_lines',
+            'city',
+            'postal_code',
+            'state'
+          ])
+        }
+
+        if (!existingAddress) {
+          // new address
+          // if this is the only address, make it primary
+          if (constituentAddressData.primary !== false && constituentAddressListResults.count === 0) {
+            constituentAddressData.primary = true
+          }
+          // create address
+          const createConstituentAddressResponse = await blackbaudSkyApiClient.createConstituentAddress(
+            constituentId,
+            constituentAddressData
+          )
+          if (createConstituentAddressResponse.status !== 200) {
+            updateAddressErrorCode = createConstituentAddressResponse.status
+          }
+        } else {
+          // existing address
+          if (
+            existingAddress.inactive ||
+            (constituentAddressData.do_not_mail !== undefined &&
+              constituentAddressData.do_not_mail !== existingAddress.do_not_mail) ||
+            (constituentAddressData.primary !== undefined &&
+              constituentAddressData.primary &&
+              constituentAddressData.primary !== existingAddress.primary) ||
+            constituentAddressData.type !== existingAddress.type
+          ) {
+            // request has at least one address field to update
+            // update address
+            const updateConstituentAddressByIdResponse = await blackbaudSkyApiClient.updateConstituentAddressById(
+              existingAddress.id,
+              constituentAddressData
+            )
+            if (updateConstituentAddressByIdResponse.status !== 200) {
+              updateAddressErrorCode = updateConstituentAddressByIdResponse.status
+            }
+          }
+        }
+      }
+
+      if (updateAddressErrorCode) {
+        const errorMessage = updateAddressErrorCode
+          ? `${updateAddressErrorCode} error occurred when updating constituent address`
+          : 'Error occurred when updating constituent address'
+        if (isRequestErrorRetryable(updateAddressErrorCode)) {
+          throw new RetryableError(errorMessage)
+        } else {
+          integrationErrors.push(errorMessage)
+        }
+      }
+    }
+
+    if (Object.keys(constituentEmailData).length > 0) {
+      // request has email data
+      // get existing addresses
+      const getConstituentEmailListResponse = await blackbaudSkyApiClient.getConstituentEmailList(constituentId)
+      let updateEmailErrorCode = undefined
+      if (getConstituentEmailListResponse.status !== 200) {
+        updateEmailErrorCode = getConstituentEmailListResponse.status
+      } else {
+        const constituentEmailListResults = await getConstituentEmailListResponse.json()
+
+        // check email list for one that matches request
+        let existingEmail = undefined
+        if (constituentEmailListResults.count > 0) {
+          existingEmail = filterObjectListByMatchFields(constituentEmailListResults.value, constituentEmailData, [
+            'address'
+          ])
+        }
+
+        if (!existingEmail) {
+          // new email
+          // if this is the only email, make it primary
+          if (constituentEmailData.primary !== false && constituentEmailListResults.count === 0) {
+            constituentEmailData.primary = true
+          }
+          // create email
+          const createConstituentEmailResponse = await blackbaudSkyApiClient.createConstituentEmail(
+            constituentId,
+            constituentEmailData
+          )
+          if (createConstituentEmailResponse.status !== 200) {
+            updateEmailErrorCode = createConstituentEmailResponse.status
+          }
+        } else {
+          // existing email
+          if (
+            existingEmail.inactive ||
+            (constituentEmailData.do_not_email !== undefined &&
+              constituentEmailData.do_not_email !== existingEmail.do_not_email) ||
+            (constituentEmailData.primary !== undefined &&
+              constituentEmailData.primary &&
+              constituentEmailData.primary !== existingEmail.primary) ||
+            constituentEmailData.type !== existingEmail.type
+          ) {
+            // request has at least one email field to update
+            // update email
+            const updateConstituentEmailByIdResponse = await blackbaudSkyApiClient.updateConstituentEmailById(
+              existingEmail.id,
+              constituentEmailData
+            )
+            if (updateConstituentEmailByIdResponse.status !== 200) {
+              updateEmailErrorCode = updateConstituentEmailByIdResponse.status
+            }
+          }
+        }
+      }
+
+      if (updateEmailErrorCode) {
+        const errorMessage = updateEmailErrorCode
+          ? `${updateEmailErrorCode} error occurred when updating constituent email`
+          : 'Error occurred when updating constituent email'
+        if (isRequestErrorRetryable(updateEmailErrorCode)) {
+          throw new RetryableError(errorMessage)
+        } else {
+          integrationErrors.push(errorMessage)
+        }
+      }
+    }
+
+    if (Object.keys(constituentOnlinePresenceData).length > 0) {
+      // request has online presence data
+      // get existing online presences
+      const getConstituentOnlinePresenceListResponse = await blackbaudSkyApiClient.getConstituentOnlinePresenceList(
+        constituentId
+      )
+      let updateOnlinePresenceErrorCode = undefined
+      if (getConstituentOnlinePresenceListResponse.status !== 200) {
+        updateOnlinePresenceErrorCode = getConstituentOnlinePresenceListResponse.status
+      } else {
+        const constituentOnlinePresenceListResults = await getConstituentOnlinePresenceListResponse.json()
+
+        // check online presence list for one that matches request
+        let existingOnlinePresence = undefined
+        if (constituentOnlinePresenceListResults.count > 0) {
+          existingOnlinePresence = filterObjectListByMatchFields(
+            constituentOnlinePresenceListResults.value,
+            constituentOnlinePresenceData,
+            ['address']
+          )
+        }
+
+        if (!existingOnlinePresence) {
+          // new online presence
+          // if this is the only online presence, make it primary
+          if (constituentOnlinePresenceData.primary !== false && constituentOnlinePresenceListResults.count === 0) {
+            constituentOnlinePresenceData.primary = true
+          }
+          // create online presence
+          const createConstituentOnlinePresenceResponse = await blackbaudSkyApiClient.createConstituentOnlinePresence(
+            constituentId,
+            constituentOnlinePresenceData
+          )
+          if (createConstituentOnlinePresenceResponse.status !== 200) {
+            updateOnlinePresenceErrorCode = createConstituentOnlinePresenceResponse.status
+          }
+        } else {
+          // existing online presence
+          if (
+            existingOnlinePresence.inactive ||
+            (constituentOnlinePresenceData.primary !== undefined &&
+              constituentOnlinePresenceData.primary !== existingOnlinePresence.primary) ||
+            constituentOnlinePresenceData.type !== existingOnlinePresence.type
+          ) {
+            // request has at least one online presence field to update
+            // update online presence
+            const updateConstituentOnlinePresenceByIdResponse =
+              await blackbaudSkyApiClient.updateConstituentOnlinePresenceById(
+                existingOnlinePresence.id,
+                constituentOnlinePresenceData
+              )
+            if (updateConstituentOnlinePresenceByIdResponse.status !== 200) {
+              updateOnlinePresenceErrorCode = updateConstituentOnlinePresenceByIdResponse.status
+            }
+          }
+        }
+      }
+
+      if (updateOnlinePresenceErrorCode) {
+        const errorMessage = updateOnlinePresenceErrorCode
+          ? `${updateOnlinePresenceErrorCode} error occurred when updating constituent online presence`
+          : 'Error occurred when updating constituent online presence'
+        if (isRequestErrorRetryable(updateOnlinePresenceErrorCode)) {
+          throw new RetryableError(errorMessage)
+        } else {
+          integrationErrors.push(errorMessage)
+        }
+      }
+    }
+
+    if (Object.keys(constituentPhoneData).length > 0) {
+      // request has phone data
+      // get existing phones
+      const getConstituentPhoneListResponse = await blackbaudSkyApiClient.getConstituentPhoneList(constituentId)
+      let updatePhoneErrorCode = undefined
+      if (getConstituentPhoneListResponse.status !== 200) {
+        updatePhoneErrorCode = getConstituentPhoneListResponse.status
+      } else {
+        const constituentPhoneListResults = await getConstituentPhoneListResponse.json()
+
+        // check phone list for one that matches request
+        let existingPhone = undefined
+        if (constituentPhoneListResults.count > 0) {
+          existingPhone = filterObjectListByMatchFields(constituentPhoneListResults.value, constituentPhoneData, [
+            'int:number'
+          ])
+        }
+
+        if (!existingPhone) {
+          // new phone
+          // if this is the only phone, make it primary
+          if (constituentPhoneData.primary !== false && constituentPhoneListResults.count === 0) {
+            constituentPhoneData.primary = true
+          }
+          // create phone
+          const createConstituentPhoneResponse = await blackbaudSkyApiClient.createConstituentPhone(
+            constituentId,
+            constituentPhoneData
+          )
+          if (createConstituentPhoneResponse.status !== 200) {
+            updatePhoneErrorCode = createConstituentPhoneResponse.status
+          }
+        } else {
+          // existing phone
+          if (
+            existingPhone.inactive ||
+            (constituentPhoneData.do_not_call !== undefined &&
+              constituentPhoneData.do_not_call !== existingPhone.do_not_call) ||
+            (constituentPhoneData.primary !== undefined && constituentPhoneData.primary !== existingPhone.primary) ||
+            constituentPhoneData.type !== existingPhone.type
+          ) {
+            // request has at least one phone field to update
+            // update phone
+            const updateConstituentPhoneByIdResponse = await blackbaudSkyApiClient.updateConstituentPhoneById(
+              existingPhone.id,
+              constituentPhoneData
+            )
+            if (updateConstituentPhoneByIdResponse.status !== 200) {
+              updatePhoneErrorCode = updateConstituentPhoneByIdResponse.status
+            }
+          }
+        }
+      }
+
+      if (updatePhoneErrorCode) {
+        const errorMessage = updatePhoneErrorCode
+          ? `${updatePhoneErrorCode} error occurred when updating constituent online presence`
+          : 'Error occurred when updating constituent online presence'
+        if (isRequestErrorRetryable(updatePhoneErrorCode)) {
+          throw new RetryableError(errorMessage)
+        } else {
+          integrationErrors.push(errorMessage)
+        }
+      }
+    }
+
+    if (integrationErrors.length > 0) {
+      throw new IntegrationError(
+        'One or more errors occurred when updating existing constituent: ' + integrationErrors.join(', '),
+        'UPDATE_CONSTITUENT_ERROR',
+        500
+      )
+    }
+
+    return Promise.resolve({
+      id: constituentId
+    })
+  }
+}
+
 const action: ActionDefinition<Settings, Payload> = {
   title: 'Create or Update Individual Constituent',
   description: "Create or update an Individual Constituent record in Raiser's Edge NXT.",
   defaultSubscription: 'type = "identify"',
-  fields: createOrUpdateIndividualConstituentFields,
-  perform: async (request, { payload }) => {
-    const blackbaudSkyApiClient: BlackbaudSkyApi = new BlackbaudSkyApi(request)
-
-    // search for existing constituent
-    let constituentId = undefined
-    if (payload.email?.address || payload.lookup_id) {
-      // default to searching by email
-      let searchField = 'email_address'
-      let searchText = payload.email?.address || ''
-
-      if (payload.lookup_id) {
-        // search by lookup_id if one is provided
-        searchField = 'lookup_id'
-        searchText = payload.lookup_id
-      }
-
-      const constituentSearchResponse = await blackbaudSkyApiClient.getExistingConstituents(searchField, searchText)
-      const constituentSearchResults = await constituentSearchResponse.json()
-
-      if (constituentSearchResults.count > 1) {
-        // multiple existing constituents, throw an error
-        throw new IntegrationError('Multiple records returned for given traits', 'MULTIPLE_EXISTING_RECORDS', 400)
-      } else if (constituentSearchResults.count === 1) {
-        // existing constituent
-        constituentId = constituentSearchResults.value[0].id
-      } else if (constituentSearchResults.count !== 0) {
-        // if constituent count is not >= 0, something went wrong
-        throw new IntegrationError(
-          'Unexpected constituent record count for given traits',
-          'UNEXPECTED_RECORD_COUNT',
-          500
-        )
-      }
-    }
-
-    // data for constituent call
-    const constituentData: Constituent = {}
-    const simpleConstituentFields = ['first', 'gender', 'income', 'last', 'lookup_id']
-    simpleConstituentFields.forEach((key) => {
-      if (payload[key] !== undefined) {
-        constituentData[key] = payload[key]
-      }
-    })
-    if (payload.birthdate) {
-      const birthdateFuzzyDate = dateStringToFuzzyDate(payload.birthdate)
-      if (birthdateFuzzyDate) {
-        constituentData.birthdate = birthdateFuzzyDate
-      }
-    }
-
-    // data for address call
-    let constituentAddressData: Address = {}
-    if (
-      payload.address &&
-      (payload.address.address_lines ||
-        payload.address.city ||
-        payload.address.country ||
-        payload.address.postal_code ||
-        payload.address.state) &&
-      payload.address.type
-    ) {
-      constituentAddressData = payload.address
-    }
-
-    // data for email call
-    let constituentEmailData: Email = {}
-    if (payload.email && payload.email.address && payload.email.type) {
-      constituentEmailData = payload.email
-    }
-
-    // data for online presence call
-    let constituentOnlinePresenceData: OnlinePresence = {}
-    if (payload.online_presence && payload.online_presence.address && payload.online_presence.type) {
-      constituentOnlinePresenceData = payload.online_presence
-    }
-
-    // data for phone call
-    let constituentPhoneData: Phone = {}
-    if (payload.phone && payload.phone.number && payload.phone.type) {
-      constituentPhoneData = payload.phone
-    }
-
-    if (!constituentId) {
-      // new constituent
-      // hardcode type
-      constituentData.type = 'Individual'
-      if (!constituentData.last) {
-        // last name is required to create a new constituent
-        // no last name, throw an error
-        throw new IntegrationError('Missing last name value', 'MISSING_REQUIRED_FIELD', 400)
-      } else {
-        // request has last name
-        // append other data objects to constituent
-        if (Object.keys(constituentAddressData).length > 0) {
-          constituentData.address = constituentAddressData
-        }
-        if (Object.keys(constituentEmailData).length > 0) {
-          constituentData.email = constituentEmailData
-        }
-        if (Object.keys(constituentOnlinePresenceData).length > 0) {
-          constituentData.online_presence = constituentOnlinePresenceData
-        }
-        if (Object.keys(constituentPhoneData).length > 0) {
-          constituentData.phone = constituentPhoneData
-        }
-
-        // create constituent
-        await blackbaudSkyApiClient.createConstituent(constituentData)
-      }
-
-      return
-    } else {
-      // existing constituent
-      // aggregate all errors
-      const integrationErrors = []
-      if (Object.keys(constituentData).length > 0) {
-        // request has at least one constituent field to update
-        // update constituent
-        const updateConstituentResponse = await blackbaudSkyApiClient.updateConstituent(constituentId, constituentData)
-        if (updateConstituentResponse.status !== 200) {
-          const statusCode = updateConstituentResponse.status
-          const errorMessage = statusCode
-            ? `${statusCode} error occurred when updating constituent`
-            : 'Error occurred when updating constituent'
-          if (isRequestErrorRetryable(statusCode)) {
-            throw new RetryableError(errorMessage)
-          } else {
-            integrationErrors.push(errorMessage)
-          }
-        }
-      }
-
-      if (Object.keys(constituentAddressData).length > 0) {
-        // request has address data
-        // get existing addresses
-        const getConstituentAddressListResponse = await blackbaudSkyApiClient.getConstituentAddressList(constituentId)
-        let updateAddressErrorCode = undefined
-        if (getConstituentAddressListResponse.status !== 200) {
-          updateAddressErrorCode = getConstituentAddressListResponse.status
-        } else {
-          const constituentAddressListResults = await getConstituentAddressListResponse.json()
-
-          // check address list for one that matches request
-          let existingAddress = undefined
-          if (constituentAddressListResults.count > 0) {
-            existingAddress = filterObjectListByMatchFields(
-              constituentAddressListResults.value,
-              constituentAddressData,
-              ['address_lines', 'city', 'postal_code', 'state']
-            )
-          }
-
-          if (!existingAddress) {
-            // new address
-            // if this is the only address, make it primary
-            if (constituentAddressData.primary !== false && constituentAddressListResults.count === 0) {
-              constituentAddressData.primary = true
-            }
-            // create address
-            const createConstituentAddressResponse = await blackbaudSkyApiClient.createConstituentAddress(
-              constituentId,
-              constituentAddressData
-            )
-            if (createConstituentAddressResponse.status !== 200) {
-              updateAddressErrorCode = createConstituentAddressResponse.status
-            }
-          } else {
-            // existing address
-            if (
-              existingAddress.inactive ||
-              (constituentAddressData.do_not_mail !== undefined &&
-                constituentAddressData.do_not_mail !== existingAddress.do_not_mail) ||
-              (constituentAddressData.primary !== undefined &&
-                constituentAddressData.primary &&
-                constituentAddressData.primary !== existingAddress.primary) ||
-              constituentAddressData.type !== existingAddress.type
-            ) {
-              // request has at least one address field to update
-              // update address
-              const updateConstituentAddressByIdResponse = await blackbaudSkyApiClient.updateConstituentAddressById(
-                existingAddress.id,
-                constituentAddressData
-              )
-              if (updateConstituentAddressByIdResponse.status !== 200) {
-                updateAddressErrorCode = updateConstituentAddressByIdResponse.status
-              }
-            }
-          }
-        }
-
-        if (updateAddressErrorCode) {
-          const errorMessage = updateAddressErrorCode
-            ? `${updateAddressErrorCode} error occurred when updating constituent address`
-            : 'Error occurred when updating constituent address'
-          if (isRequestErrorRetryable(updateAddressErrorCode)) {
-            throw new RetryableError(errorMessage)
-          } else {
-            integrationErrors.push(errorMessage)
-          }
-        }
-      }
-
-      if (Object.keys(constituentEmailData).length > 0) {
-        // request has email data
-        // get existing addresses
-        const getConstituentEmailListResponse = await blackbaudSkyApiClient.getConstituentEmailList(constituentId)
-        let updateEmailErrorCode = undefined
-        if (getConstituentEmailListResponse.status !== 200) {
-          updateEmailErrorCode = getConstituentEmailListResponse.status
-        } else {
-          const constituentEmailListResults = await getConstituentEmailListResponse.json()
-
-          // check email list for one that matches request
-          let existingEmail = undefined
-          if (constituentEmailListResults.count > 0) {
-            existingEmail = filterObjectListByMatchFields(constituentEmailListResults.value, constituentEmailData, [
-              'address'
-            ])
-          }
-
-          if (!existingEmail) {
-            // new email
-            // if this is the only email, make it primary
-            if (constituentEmailData.primary !== false && constituentEmailListResults.count === 0) {
-              constituentEmailData.primary = true
-            }
-            // create email
-            const createConstituentEmailResponse = await blackbaudSkyApiClient.createConstituentEmail(
-              constituentId,
-              constituentEmailData
-            )
-            if (createConstituentEmailResponse.status !== 200) {
-              updateEmailErrorCode = createConstituentEmailResponse.status
-            }
-          } else {
-            // existing email
-            if (
-              existingEmail.inactive ||
-              (constituentEmailData.do_not_email !== undefined &&
-                constituentEmailData.do_not_email !== existingEmail.do_not_email) ||
-              (constituentEmailData.primary !== undefined &&
-                constituentEmailData.primary &&
-                constituentEmailData.primary !== existingEmail.primary) ||
-              constituentEmailData.type !== existingEmail.type
-            ) {
-              // request has at least one email field to update
-              // update email
-              const updateConstituentEmailByIdResponse = await blackbaudSkyApiClient.updateConstituentEmailById(
-                existingEmail.id,
-                constituentEmailData
-              )
-              if (updateConstituentEmailByIdResponse.status !== 200) {
-                updateEmailErrorCode = updateConstituentEmailByIdResponse.status
-              }
-            }
-          }
-        }
-
-        if (updateEmailErrorCode) {
-          const errorMessage = updateEmailErrorCode
-            ? `${updateEmailErrorCode} error occurred when updating constituent email`
-            : 'Error occurred when updating constituent email'
-          if (isRequestErrorRetryable(updateEmailErrorCode)) {
-            throw new RetryableError(errorMessage)
-          } else {
-            integrationErrors.push(errorMessage)
-          }
-        }
-      }
-
-      if (Object.keys(constituentOnlinePresenceData).length > 0) {
-        // request has online presence data
-        // get existing online presences
-        const getConstituentOnlinePresenceListResponse = await blackbaudSkyApiClient.getConstituentOnlinePresenceList(
-          constituentId
-        )
-        let updateOnlinePresenceErrorCode = undefined
-        if (getConstituentOnlinePresenceListResponse.status !== 200) {
-          updateOnlinePresenceErrorCode = getConstituentOnlinePresenceListResponse.status
-        } else {
-          const constituentOnlinePresenceListResults = await getConstituentOnlinePresenceListResponse.json()
-
-          // check online presence list for one that matches request
-          let existingOnlinePresence = undefined
-          if (constituentOnlinePresenceListResults.count > 0) {
-            existingOnlinePresence = filterObjectListByMatchFields(
-              constituentOnlinePresenceListResults.value,
-              constituentOnlinePresenceData,
-              ['address']
-            )
-          }
-
-          if (!existingOnlinePresence) {
-            // new online presence
-            // if this is the only online presence, make it primary
-            if (constituentOnlinePresenceData.primary !== false && constituentOnlinePresenceListResults.count === 0) {
-              constituentOnlinePresenceData.primary = true
-            }
-            // create online presence
-            const createConstituentOnlinePresenceResponse = await blackbaudSkyApiClient.createConstituentOnlinePresence(
-              constituentId,
-              constituentOnlinePresenceData
-            )
-            if (createConstituentOnlinePresenceResponse.status !== 200) {
-              updateOnlinePresenceErrorCode = createConstituentOnlinePresenceResponse.status
-            }
-          } else {
-            // existing online presence
-            if (
-              existingOnlinePresence.inactive ||
-              (constituentOnlinePresenceData.primary !== undefined &&
-                constituentOnlinePresenceData.primary !== existingOnlinePresence.primary) ||
-              constituentOnlinePresenceData.type !== existingOnlinePresence.type
-            ) {
-              // request has at least one online presence field to update
-              // update online presence
-              const updateConstituentOnlinePresenceByIdResponse =
-                await blackbaudSkyApiClient.updateConstituentOnlinePresenceById(
-                  existingOnlinePresence.id,
-                  constituentOnlinePresenceData
-                )
-              if (updateConstituentOnlinePresenceByIdResponse.status !== 200) {
-                updateOnlinePresenceErrorCode = updateConstituentOnlinePresenceByIdResponse.status
-              }
-            }
-          }
-        }
-
-        if (updateOnlinePresenceErrorCode) {
-          const errorMessage = updateOnlinePresenceErrorCode
-            ? `${updateOnlinePresenceErrorCode} error occurred when updating constituent online presence`
-            : 'Error occurred when updating constituent online presence'
-          if (isRequestErrorRetryable(updateOnlinePresenceErrorCode)) {
-            throw new RetryableError(errorMessage)
-          } else {
-            integrationErrors.push(errorMessage)
-          }
-        }
-      }
-
-      if (Object.keys(constituentPhoneData).length > 0) {
-        // request has phone data
-        // get existing phones
-        const getConstituentPhoneListResponse = await blackbaudSkyApiClient.getConstituentPhoneList(constituentId)
-        let updatePhoneErrorCode = undefined
-        if (getConstituentPhoneListResponse.status !== 200) {
-          updatePhoneErrorCode = getConstituentPhoneListResponse.status
-        } else {
-          const constituentPhoneListResults = await getConstituentPhoneListResponse.json()
-
-          // check phone list for one that matches request
-          let existingPhone = undefined
-          if (constituentPhoneListResults.count > 0) {
-            existingPhone = filterObjectListByMatchFields(constituentPhoneListResults.value, constituentPhoneData, [
-              'int:number'
-            ])
-          }
-
-          if (!existingPhone) {
-            // new phone
-            // if this is the only phone, make it primary
-            if (constituentPhoneData.primary !== false && constituentPhoneListResults.count === 0) {
-              constituentPhoneData.primary = true
-            }
-            // create phone
-            const createConstituentPhoneResponse = await blackbaudSkyApiClient.createConstituentPhone(
-              constituentId,
-              constituentPhoneData
-            )
-            if (createConstituentPhoneResponse.status !== 200) {
-              updatePhoneErrorCode = createConstituentPhoneResponse.status
-            }
-          } else {
-            // existing phone
-            if (
-              existingPhone.inactive ||
-              (constituentPhoneData.do_not_call !== undefined &&
-                constituentPhoneData.do_not_call !== existingPhone.do_not_call) ||
-              (constituentPhoneData.primary !== undefined && constituentPhoneData.primary !== existingPhone.primary) ||
-              constituentPhoneData.type !== existingPhone.type
-            ) {
-              // request has at least one phone field to update
-              // update phone
-              const updateConstituentPhoneByIdResponse = await blackbaudSkyApiClient.updateConstituentPhoneById(
-                existingPhone.id,
-                constituentPhoneData
-              )
-              if (updateConstituentPhoneByIdResponse.status !== 200) {
-                updatePhoneErrorCode = updateConstituentPhoneByIdResponse.status
-              }
-            }
-          }
-        }
-
-        if (updatePhoneErrorCode) {
-          const errorMessage = updatePhoneErrorCode
-            ? `${updatePhoneErrorCode} error occurred when updating constituent online presence`
-            : 'Error occurred when updating constituent online presence'
-          if (isRequestErrorRetryable(updatePhoneErrorCode)) {
-            throw new RetryableError(errorMessage)
-          } else {
-            integrationErrors.push(errorMessage)
-          }
-        }
-      }
-
-      if (integrationErrors.length > 0) {
-        throw new IntegrationError(
-          'One or more errors occurred when updating existing constituent: ' + integrationErrors.join(', '),
-          'UPDATE_CONSTITUENT_ERROR',
-          500
-        )
-      }
-
-      return
-    }
-  }
+  fields,
+  perform
 }
 
 export default action
