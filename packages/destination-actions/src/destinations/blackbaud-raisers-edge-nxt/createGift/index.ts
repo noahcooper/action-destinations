@@ -187,7 +187,10 @@ const perform = async (request, { payload }) => {
     if (fields[key].constituentField) {
       // only append non-empty fields/objects
       if (payload[key] && (typeof payload[key] !== 'object' || Object.keys(payload[key]).length > 0)) {
-        constituentPayload[key.substring('constituent_'.length)] = payload[key]
+        const excludedConstituentFields = ['constituent_lookup_id']
+        if (!excludedConstituentFields.includes(key)) {
+          constituentPayload[key.substring('constituent_'.length)] = payload[key]
+        }
       }
     }
   })
@@ -202,11 +205,7 @@ const perform = async (request, { payload }) => {
   } else if (constituentId === undefined) {
     // constituent_id is required to create a gift
     // no constituent_id, throw an error
-    throw new IntegrationError(
-      `Missing constituent_id value, constituentPayload = ${constituentPayload}, createOrUpdateIndividualConstituentResponse = ${createOrUpdateIndividualConstituentResponse}`,
-      'MISSING_REQUIRED_FIELD',
-      400
-    )
+    throw new IntegrationError(`Missing constituent_id value`, 'MISSING_REQUIRED_FIELD', 400)
   }
 
   const blackbaudSkyApiClient: BlackbaudSkyApi = new BlackbaudSkyApi(request)
