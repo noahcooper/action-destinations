@@ -110,7 +110,8 @@ const fields = {
     label: 'Post Status',
     description:
       'The general ledger post status of the gift. Available values are "Posted", "NotPosted", and "DoNotPost".',
-    type: 'string'
+    type: 'string',
+    default: 'NotPosted'
   },
   receipt: {
     label: 'Receipt',
@@ -164,7 +165,8 @@ const fields = {
     label: 'Type',
     description:
       'The gift type. Available values are "Donation", "Other", "GiftInKind", "RecurringGift", and "RecurringGiftPayment".',
-    type: 'string'
+    type: 'string',
+    default: 'Donation'
   }
 }
 
@@ -232,10 +234,8 @@ const perform = async (request, { payload }) => {
     }
   })
 
-  // default type
-  if (!giftData.type) {
-    giftData.type = 'Donation'
-  }
+  // default date
+  giftData.date = giftData.date || new Date().toISOString()
 
   // create acknowledgements array
   if (payload.acknowledgement) {
@@ -278,10 +278,7 @@ const perform = async (request, { payload }) => {
     }
   }
 
-  // default post status and date
-  if (!giftData.post_status) {
-    giftData.post_status = 'NotPosted'
-  }
+  // default post date
   if ((giftData.post_status === 'NotPosted' || giftData.post_status === 'Posted') && !giftData.post_date) {
     giftData.post_date = payload.date
   }
@@ -291,7 +288,7 @@ const perform = async (request, { payload }) => {
     const receiptData: GiftReceipt = {
       status: payload.receipt.status || 'NEEDSRECEIPT'
     }
-    if (receiptData.status !== 'NEEDSRECEIPT' && receiptData.status !== 'DONOTRECEIPT' && payload.receipt.date) {
+    if (receiptData.status === 'RECEIPTED' && payload.receipt.date) {
       receiptData.date = payload.receipt.date
     }
     giftData.receipts = [receiptData]
