@@ -29,7 +29,7 @@ export interface Payload {
   /**
    * The gift date in ISO-8601 format.
    */
-  date: string | number
+  date?: string | number
   /**
    * The ID of the fund associated with the gift.
    */

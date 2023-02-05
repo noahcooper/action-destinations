@@ -65,8 +65,7 @@ const fields = {
   date: {
     label: 'Gift Date',
     description: 'The gift date in ISO-8601 format.',
-    type: 'datetime',
-    required: true
+    type: 'datetime'
   },
   fund_id: {
     label: 'Fund ID',
