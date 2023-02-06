@@ -2,6 +2,18 @@ export interface RefreshTokenResponse {
   access_token: string
 }
 
+export interface ExistingConstituentResult {
+  id: string | undefined
+}
+
+export interface CreateConstituentResult {
+  id: string
+}
+
+export interface UpdateConstituentResult {
+  id: string
+}
+
 export interface FuzzyDate {
   d: string
   m: string
@@ -15,7 +27,7 @@ export interface Constituent {
   first?: string
   gender?: string
   income?: string
-  last?: string
+  last: string
   lookup_id?: string
   online_presence?: OnlinePresence
   phone?: Phone
@@ -30,27 +42,27 @@ export interface Address {
   postal_code?: string
   primary?: boolean
   state?: string
-  type?: string
+  type: string
 }
 
 export interface Email {
-  address?: string
+  address: string
   do_not_email?: boolean
   primary?: boolean
-  type?: string
+  type: string
 }
 
 export interface OnlinePresence {
-  address?: string
+  address: string
   primary?: boolean
-  type?: string
+  type: string
 }
 
 export interface Phone {
   do_not_call?: boolean
-  number?: string
+  number: string
   primary?: boolean
-  type?: string
+  type: string
 }
 
 export interface Gift {
@@ -83,7 +95,7 @@ export interface GiftAmount {
 }
 
 export interface GiftSplit {
-  amount: string
+  amount: GiftAmount
   fund_id: string
 }
 
