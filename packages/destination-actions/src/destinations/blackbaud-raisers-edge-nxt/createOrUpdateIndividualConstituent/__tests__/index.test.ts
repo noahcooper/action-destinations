@@ -26,25 +26,25 @@ const mapping = {
   properties: {
     address: {
       type: {
-        '@path': '$.traits.address_type'
+        '@path': '$.traits.addressType'
       }
     },
     email: {
       type: {
-        '@path': '$.traits.email_type'
+        '@path': '$.traits.emailType'
       }
     },
     lookup_id: {
-      '@path': '$.traits.lookup_id'
+      '@path': '$.traits.lookupId'
     },
     online_presence: {
       type: {
-        '@path': '$.traits.website_type'
+        '@path': '$.traits.websiteType'
       }
     },
     phone: {
       type: {
-        '@path': '$.traits.phone_type'
+        '@path': '$.traits.phoneType'
       }
     }
   }
