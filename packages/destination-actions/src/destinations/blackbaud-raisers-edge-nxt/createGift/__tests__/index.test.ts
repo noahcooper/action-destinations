@@ -8,7 +8,7 @@ import {
   trackEventData,
   trackEventDataNewConstituent,
   trackEventDataNoConstituent
-} from './fixtures'
+} from '../fixtures'
 
 const testDestination = createTestIntegration(Destination)
 
