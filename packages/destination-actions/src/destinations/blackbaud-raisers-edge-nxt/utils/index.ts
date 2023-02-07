@@ -30,11 +30,16 @@ export const dateStringToFuzzyDate = (dateString: string | number) => {
 }
 
 export const splitConstituentPayload = (payload: CreateOrUpdateIndividualConstituentPayload) => {
-  const constituentData: Partial<Constituent> = {}
-  const simpleConstituentFields = ['first', 'gender', 'income', 'last', 'lookup_id']
-  simpleConstituentFields.forEach((key: string) => {
-    if (payload[key] !== undefined) {
-      constituentData[key] = payload[key]
+  const constituentData: Partial<Constituent> = {
+    first: payload.first,
+    gender: payload.gender,
+    income: payload.income,
+    last: payload.last,
+    lookup_id: payload.lookup_id
+  }
+  Object.keys(constituentData).forEach((key) => {
+    if (!constituentData[key as keyof Constituent]) {
+      delete constituentData[key as keyof Constituent]
     }
   })
   if (payload.birthdate) {
@@ -96,24 +101,22 @@ export const buildConstituentPayloadFromGiftPayload = (payload: CreateGiftPayloa
 export const buildGiftDataFromPayload = (constituentId?: string, payload: CreateGiftPayload) => {
   // data for gift call
   const giftData: Partial<Gift> = {
+    amount: payload.amount,
     constituent_id: constituentId,
+    date: payload.date,
+    gift_status: payload.gift_status,
+    is_anonymous: payload.is_anonymous,
     // hardcode is_manual
-    is_manual: true
+    is_manual: true,
+    lookup_id: payload.lookup_id,
+    post_date: payload.post_date,
+    post_status: payload.post_status,
+    subtype: payload.subtype,
+    type: payload.type
   }
-  const simpleGiftFields = [
-    'amount',
-    'date',
-    'gift_status',
-    'is_anonymous',
-    'lookup_id',
-    'post_date',
-    'post_status',
-    'subtype',
-    'type'
-  ]
-  simpleGiftFields.forEach((key: string) => {
-    if (payload[key] !== undefined) {
-      giftData[key] = payload[key]
+  Object.keys(giftData).forEach((key) => {
+    if (!giftData[key as keyof Gift]) {
+      delete giftData[key as keyof Gift]
     }
   })
 
