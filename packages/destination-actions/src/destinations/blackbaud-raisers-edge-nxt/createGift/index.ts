@@ -86,7 +86,7 @@ const fields: Record<string, InputField> = {
   linked_gifts: {
     label: 'Linked Gifts',
     description: 'The recurring gift associated with the payment being added.',
-    type: 'array'
+    type: 'string'
   },
   lookup_id: {
     label: 'Lookup ID',

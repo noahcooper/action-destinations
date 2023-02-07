@@ -45,7 +45,7 @@ export interface Payload {
   /**
    * The recurring gift associated with the payment being added.
    */
-  linked_gifts?: unknown[]
+  linked_gifts?: string
   /**
    * The organization-defined identifier for the gift.
    */
