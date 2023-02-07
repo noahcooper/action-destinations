@@ -193,7 +193,7 @@ const perform: RequestFn<Settings, Payload> = async (request, { settings, payloa
 
   const blackbaudSkyApiClient: BlackbaudSkyApi = new BlackbaudSkyApi(request)
 
-  const giftData = buildGiftDataFromPayload(constituentId, payload) as Gift
+  const giftData = buildGiftDataFromPayload(constituentId as string, payload) as Gift
 
   return blackbaudSkyApiClient.createGift(giftData)
 }
