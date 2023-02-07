@@ -93,7 +93,7 @@ export const buildConstituentPayloadFromGiftPayload = (payload: CreateGiftPayloa
   return constituentPayload
 }
 
-export const buildGiftDataFromPayload = (constituentId: string, payload: CreateGiftPayload) => {
+export const buildGiftDataFromPayload = (constituentId?: string, payload: CreateGiftPayload) => {
   // data for gift call
   const giftData: Partial<Gift> = {
     constituent_id: constituentId,
