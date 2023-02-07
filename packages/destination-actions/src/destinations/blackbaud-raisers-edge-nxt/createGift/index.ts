@@ -1,4 +1,4 @@
-import { ActionDefinition, InputField, IntegrationError } from '@segment/actions-core'
+import { ActionDefinition, InputField, IntegrationError, RequestFn } from '@segment/actions-core'
 import type { Settings } from '../generated-types'
 import type { Payload } from './generated-types'
 import {
@@ -176,7 +176,7 @@ Object.keys(createOrUpdateIndividualConstituentFields).forEach((key: string) => 
   }
 })
 
-const perform = async (request, { payload }) => {
+const perform: RequestFn<Settings, Payload> = async (request, { payload }) => {
   const constituentPayload = buildConstituentPayloadFromGiftPayload(payload)
 
   let constituentId = payload.constituent_id

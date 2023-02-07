@@ -1,4 +1,4 @@
-import { ActionDefinition, InputField } from '@segment/actions-core'
+import { ActionDefinition, InputField, RequestFn } from '@segment/actions-core'
 import type { Settings } from '../generated-types'
 import type { Payload } from './generated-types'
 import { BlackbaudSkyApi } from '../api'
@@ -319,7 +319,7 @@ export const fields: Record<string, InputField> = {
   }
 }
 
-export const perform = async (request, { payload }) => {
+export const perform: RequestFn<Settings, Payload> = async (request, { payload }) => {
   const blackbaudSkyApiClient: BlackbaudSkyApi = new BlackbaudSkyApi(request)
 
   let constituentId = undefined
