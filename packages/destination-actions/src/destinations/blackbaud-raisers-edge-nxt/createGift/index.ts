@@ -1,4 +1,4 @@
-import { ActionDefinition, InputField, IntegrationError, RequestFn } from '@segment/actions-core'
+import { ActionDefinition, ExecuteInput, InputField, IntegrationError, RequestFn } from '@segment/actions-core'
 import type { Settings } from '../generated-types'
 import type { Payload } from './generated-types'
 import {
@@ -176,14 +176,15 @@ Object.keys(createOrUpdateIndividualConstituentFields).forEach((key: string) => 
   }
 })
 
-const perform: RequestFn<Settings, Payload> = async (request, { payload }) => {
+const perform: RequestFn<Settings, Payload> = async (request, { settings, payload }) => {
   const constituentPayload = buildConstituentPayloadFromGiftPayload(payload)
 
   let constituentId = payload.constituent_id
   if (Object.keys(constituentPayload).length > 0) {
     const createOrUpdateIndividualConstituentResponse = await performCreateOrUpdateIndividualConstituent(request, {
+      settings: settings,
       payload: constituentPayload
-    })
+    } as ExecuteInput<Settings, Payload>)
     constituentId = createOrUpdateIndividualConstituentResponse.id
   } else if (constituentId === undefined) {
     throw new IntegrationError('Missing constituent_id value', 'MISSING_REQUIRED_FIELD', 400)
