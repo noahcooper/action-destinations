@@ -2,6 +2,7 @@ import { ActionDefinition, InputField, RequestFn } from '@segment/actions-core'
 import type { Settings } from '../generated-types'
 import type { Payload } from './generated-types'
 import { BlackbaudSkyApi } from '../api'
+import { Address, Constituent, Email, OnlinePresence, Phone } from '../types'
 import { splitConstituentPayload } from '../utils'
 
 export const fields: Record<string, InputField> = {
@@ -335,20 +336,20 @@ export const perform: RequestFn<Settings, Payload> = async (request, { payload }
 
   if (!constituentId) {
     return blackbaudSkyApiClient.createConstituentWithRelatedObjects(
-      constituentData,
-      addressData,
-      emailData,
-      onlinePresenceData,
-      phoneData
+      constituentData as Constituent,
+      addressData as Partial<Address>,
+      emailData as Partial<Email>,
+      onlinePresenceData as Partial<OnlinePresence>,
+      phoneData as Partial<Phone>
     )
   } else {
     return blackbaudSkyApiClient.updateConstituentWithRelatedObjects(
       constituentId,
-      constituentData,
-      addressData,
-      emailData,
-      onlinePresenceData,
-      phoneData
+      constituentData as Partial<Constituent>,
+      addressData as Partial<Address>,
+      emailData as Partial<Email>,
+      onlinePresenceData as Partial<OnlinePresence>,
+      phoneData as Partial<Phone>
     )
   }
 }

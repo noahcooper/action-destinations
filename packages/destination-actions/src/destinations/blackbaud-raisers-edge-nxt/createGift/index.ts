@@ -6,6 +6,7 @@ import {
   perform as performCreateOrUpdateIndividualConstituent
 } from '../createOrUpdateIndividualConstituent'
 import { BlackbaudSkyApi } from '../api'
+import { Gift } from '../types'
 import { buildConstituentPayloadFromGiftPayload, buildGiftDataFromPayload } from '../utils'
 
 const fields: Record<string, InputField> = {
@@ -192,7 +193,7 @@ const perform: RequestFn<Settings, Payload> = async (request, { settings, payloa
 
   const blackbaudSkyApiClient: BlackbaudSkyApi = new BlackbaudSkyApi(request)
 
-  const giftData = buildGiftDataFromPayload(constituentId, payload)
+  const giftData = buildGiftDataFromPayload(constituentId, payload) as Gift
 
   return blackbaudSkyApiClient.createGift(giftData)
 }

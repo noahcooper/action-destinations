@@ -1,6 +1,20 @@
-import type { IntegrationError, ModifiedResponse, RequestClient, RetryableError } from '@segment/actions-core'
+import { IntegrationError, ModifiedResponse, RequestClient, RetryableError } from '@segment/actions-core'
 import { SKY_API_CONSTITUENT_URL, SKY_API_GIFTS_URL } from '../constants'
-import { CreateConstituentResult, ExistingConstituentResult, UpdateConstituentResult } from '../types'
+import {
+  Address,
+  Constituent,
+  CreateConstituentResult,
+  Email,
+  ExistingAddress,
+  ExistingConstituentResult,
+  ExistingEmail,
+  ExistingOnlinePresence,
+  ExistingPhone,
+  Gift,
+  OnlinePresence,
+  Phone,
+  UpdateConstituentResult
+} from '../types'
 import { filterObjectListByMatchFields, isRequestErrorRetryable } from '../utils'
 
 export class BlackbaudSkyApi {
@@ -19,7 +33,7 @@ export class BlackbaudSkyApi {
     )
   }
 
-  async getExistingConstituent(emailData?: object, lookupId?: string): Promise<ExistingConstituentResult> {
+  async getExistingConstituent(emailData?: Partial<Email>, lookupId?: string): Promise<ExistingConstituentResult> {
     let constituentId = undefined
 
     // default to searching by email
@@ -51,7 +65,7 @@ export class BlackbaudSkyApi {
     })
   }
 
-  async createConstituent(constituentData: object): Promise<ModifiedResponse> {
+  async createConstituent(constituentData: Constituent): Promise<ModifiedResponse> {
     return this.request(`${SKY_API_CONSTITUENT_URL}/constituents`, {
       method: 'post',
       json: constituentData
@@ -59,11 +73,11 @@ export class BlackbaudSkyApi {
   }
 
   async createConstituentWithRelatedObjects(
-    constituentData: object,
-    addressData: object,
-    emailData: object,
-    onlinePresenceData: object,
-    phoneData: object
+    constituentData: Constituent,
+    addressData: Partial<Address>,
+    emailData: Partial<Email>,
+    onlinePresenceData: Partial<OnlinePresence>,
+    phoneData: Partial<Phone>
   ): Promise<CreateConstituentResult> {
     // hardcode type
     constituentData.type = 'Individual'
@@ -75,16 +89,16 @@ export class BlackbaudSkyApi {
     // request has last name
     // append other data objects to constituent
     if (Object.keys(addressData).length > 0) {
-      constituentData.address = addressData
+      constituentData.address = addressData as Address
     }
     if (Object.keys(emailData).length > 0) {
-      constituentData.email = emailData
+      constituentData.email = emailData as Email
     }
     if (Object.keys(onlinePresenceData).length > 0) {
-      constituentData.online_presence = onlinePresenceData
+      constituentData.online_presence = onlinePresenceData as OnlinePresence
     }
     if (Object.keys(phoneData).length > 0) {
-      constituentData.phone = phoneData
+      constituentData.phone = phoneData as Phone
     }
 
     // create constituent
@@ -96,7 +110,7 @@ export class BlackbaudSkyApi {
     })
   }
 
-  async updateConstituent(constituentId: string, constituentData: object): Promise<ModifiedResponse> {
+  async updateConstituent(constituentId: string, constituentData: Partial<Constituent>): Promise<ModifiedResponse> {
     return this.request(`${SKY_API_CONSTITUENT_URL}/constituents/${constituentId}`, {
       method: 'patch',
       json: constituentData,
@@ -111,7 +125,7 @@ export class BlackbaudSkyApi {
     })
   }
 
-  async createConstituentAddress(constituentId: string, addressData: object): Promise<ModifiedResponse> {
+  async createConstituentAddress(constituentId: string, addressData: Address): Promise<ModifiedResponse> {
     return this.request(`${SKY_API_CONSTITUENT_URL}/addresses`, {
       method: 'post',
       json: {
@@ -122,7 +136,7 @@ export class BlackbaudSkyApi {
     })
   }
 
-  async updateConstituentAddressById(addressId: string, addressData: object): Promise<ModifiedResponse> {
+  async updateConstituentAddressById(addressId: string, addressData: Address): Promise<ModifiedResponse> {
     return this.request(`${SKY_API_CONSTITUENT_URL}/addresses/${addressId}`, {
       method: 'patch',
       json: {
@@ -143,7 +157,7 @@ export class BlackbaudSkyApi {
     )
   }
 
-  async createConstituentEmail(constituentId: string, emailData: object): Promise<ModifiedResponse> {
+  async createConstituentEmail(constituentId: string, emailData: Email): Promise<ModifiedResponse> {
     return this.request(`${SKY_API_CONSTITUENT_URL}/emailaddresses`, {
       method: 'post',
       json: {
@@ -154,7 +168,7 @@ export class BlackbaudSkyApi {
     })
   }
 
-  async updateConstituentEmailById(emailId: string, emailData: object): Promise<ModifiedResponse> {
+  async updateConstituentEmailById(emailId: string, emailData: Email): Promise<ModifiedResponse> {
     return this.request(`${SKY_API_CONSTITUENT_URL}/emailaddresses/${emailId}`, {
       method: 'patch',
       json: {
@@ -175,7 +189,10 @@ export class BlackbaudSkyApi {
     )
   }
 
-  async createConstituentOnlinePresence(constituentId: string, onlinePresenceData: object): Promise<ModifiedResponse> {
+  async createConstituentOnlinePresence(
+    constituentId: string,
+    onlinePresenceData: OnlinePresence
+  ): Promise<ModifiedResponse> {
     return this.request(`${SKY_API_CONSTITUENT_URL}/onlinepresences`, {
       method: 'post',
       json: {
@@ -188,7 +205,7 @@ export class BlackbaudSkyApi {
 
   async updateConstituentOnlinePresenceById(
     onlinePresenceId: string,
-    onlinePresenceData: object
+    onlinePresenceData: OnlinePresence
   ): Promise<ModifiedResponse> {
     return this.request(`${SKY_API_CONSTITUENT_URL}/onlinepresences/${onlinePresenceId}`, {
       method: 'patch',
@@ -207,7 +224,7 @@ export class BlackbaudSkyApi {
     })
   }
 
-  async createConstituentPhone(constituentId: string, phoneData: object): Promise<ModifiedResponse> {
+  async createConstituentPhone(constituentId: string, phoneData: Phone): Promise<ModifiedResponse> {
     return this.request(`${SKY_API_CONSTITUENT_URL}/phones`, {
       method: 'post',
       json: {
@@ -220,11 +237,11 @@ export class BlackbaudSkyApi {
 
   async updateConstituentWithRelatedObjects(
     constituentId: string,
-    constituentData: object,
-    addressData: object,
-    emailData: object,
-    onlinePresenceData: object,
-    phoneData: object
+    constituentData: Partial<Constituent>,
+    addressData: Partial<Address>,
+    emailData: Partial<Email>,
+    onlinePresenceData: Partial<OnlinePresence>,
+    phoneData: Partial<Phone>
   ): Promise<UpdateConstituentResult> {
     // aggregate all errors
     const integrationErrors = []
@@ -256,14 +273,14 @@ export class BlackbaudSkyApi {
         const constituentAddressListResults = await getConstituentAddressListResponse.json()
 
         // check address list for one that matches request
-        let existingAddress = undefined
+        let existingAddress: ExistingAddress | undefined = undefined
         if (constituentAddressListResults.count > 0) {
           existingAddress = filterObjectListByMatchFields(constituentAddressListResults.value, addressData, [
             'address_lines',
             'city',
             'postal_code',
             'state'
-          ])
+          ]) as ExistingAddress | undefined
         }
 
         if (!existingAddress) {
@@ -273,7 +290,10 @@ export class BlackbaudSkyApi {
             addressData.primary = true
           }
           // create address
-          const createConstituentAddressResponse = await this.createConstituentAddress(constituentId, addressData)
+          const createConstituentAddressResponse = await this.createConstituentAddress(
+            constituentId,
+            addressData as Address
+          )
           if (createConstituentAddressResponse.status !== 200) {
             updateAddressErrorCode = createConstituentAddressResponse.status
           }
@@ -291,7 +311,7 @@ export class BlackbaudSkyApi {
             // update address
             const updateConstituentAddressByIdResponse = await this.updateConstituentAddressById(
               existingAddress.id,
-              addressData
+              addressData as Address
             )
             if (updateConstituentAddressByIdResponse.status !== 200) {
               updateAddressErrorCode = updateConstituentAddressByIdResponse.status
@@ -323,9 +343,11 @@ export class BlackbaudSkyApi {
         const constituentEmailListResults = await getConstituentEmailListResponse.json()
 
         // check email list for one that matches request
-        let existingEmail = undefined
+        let existingEmail: ExistingEmail | undefined = undefined
         if (constituentEmailListResults.count > 0) {
-          existingEmail = filterObjectListByMatchFields(constituentEmailListResults.value, emailData, ['address'])
+          existingEmail = filterObjectListByMatchFields(constituentEmailListResults.value, emailData, ['address']) as
+            | ExistingEmail
+            | undefined
         }
 
         if (!existingEmail) {
@@ -335,7 +357,7 @@ export class BlackbaudSkyApi {
             emailData.primary = true
           }
           // create email
-          const createConstituentEmailResponse = await this.createConstituentEmail(constituentId, emailData)
+          const createConstituentEmailResponse = await this.createConstituentEmail(constituentId, emailData as Email)
           if (createConstituentEmailResponse.status !== 200) {
             updateEmailErrorCode = createConstituentEmailResponse.status
           }
@@ -351,7 +373,7 @@ export class BlackbaudSkyApi {
             // update email
             const updateConstituentEmailByIdResponse = await this.updateConstituentEmailById(
               existingEmail.id,
-              emailData
+              emailData as Email
             )
             if (updateConstituentEmailByIdResponse.status !== 200) {
               updateEmailErrorCode = updateConstituentEmailByIdResponse.status
@@ -383,13 +405,13 @@ export class BlackbaudSkyApi {
         const constituentOnlinePresenceListResults = await getConstituentOnlinePresenceListResponse.json()
 
         // check online presence list for one that matches request
-        let existingOnlinePresence = undefined
+        let existingOnlinePresence: ExistingOnlinePresence | undefined = undefined
         if (constituentOnlinePresenceListResults.count > 0) {
           existingOnlinePresence = filterObjectListByMatchFields(
             constituentOnlinePresenceListResults.value,
             onlinePresenceData,
             ['address']
-          )
+          ) as ExistingOnlinePresence | undefined
         }
 
         if (!existingOnlinePresence) {
@@ -401,7 +423,7 @@ export class BlackbaudSkyApi {
           // create online presence
           const createConstituentOnlinePresenceResponse = await this.createConstituentOnlinePresence(
             constituentId,
-            onlinePresenceData
+            onlinePresenceData as OnlinePresence
           )
           if (createConstituentOnlinePresenceResponse.status !== 200) {
             updateOnlinePresenceErrorCode = createConstituentOnlinePresenceResponse.status
@@ -418,7 +440,7 @@ export class BlackbaudSkyApi {
             // update online presence
             const updateConstituentOnlinePresenceByIdResponse = await this.updateConstituentOnlinePresenceById(
               existingOnlinePresence.id,
-              onlinePresenceData
+              onlinePresenceData as OnlinePresence
             )
             if (updateConstituentOnlinePresenceByIdResponse.status !== 200) {
               updateOnlinePresenceErrorCode = updateConstituentOnlinePresenceByIdResponse.status
@@ -450,9 +472,11 @@ export class BlackbaudSkyApi {
         const constituentPhoneListResults = await getConstituentPhoneListResponse.json()
 
         // check phone list for one that matches request
-        let existingPhone = undefined
+        let existingPhone: ExistingPhone | undefined = undefined
         if (constituentPhoneListResults.count > 0) {
-          existingPhone = filterObjectListByMatchFields(constituentPhoneListResults.value, phoneData, ['int:number'])
+          existingPhone = filterObjectListByMatchFields(constituentPhoneListResults.value, phoneData, [
+            'int:number'
+          ]) as ExistingPhone | undefined
         }
 
         if (!existingPhone) {
@@ -462,7 +486,7 @@ export class BlackbaudSkyApi {
             phoneData.primary = true
           }
           // create phone
-          const createConstituentPhoneResponse = await this.createConstituentPhone(constituentId, phoneData)
+          const createConstituentPhoneResponse = await this.createConstituentPhone(constituentId, phoneData as Phone)
           if (createConstituentPhoneResponse.status !== 200) {
             updatePhoneErrorCode = createConstituentPhoneResponse.status
           }
@@ -478,7 +502,7 @@ export class BlackbaudSkyApi {
             // update phone
             const updateConstituentPhoneByIdResponse = await this.updateConstituentPhoneById(
               existingPhone.id,
-              phoneData
+              phoneData as Phone
             )
             if (updateConstituentPhoneByIdResponse.status !== 200) {
               updatePhoneErrorCode = updateConstituentPhoneByIdResponse.status
@@ -512,7 +536,7 @@ export class BlackbaudSkyApi {
     })
   }
 
-  async updateConstituentPhoneById(phoneId: string, phoneData: object): Promise<ModifiedResponse> {
+  async updateConstituentPhoneById(phoneId: string, phoneData: Partial<Phone>): Promise<ModifiedResponse> {
     return this.request(`${SKY_API_CONSTITUENT_URL}/phones/${phoneId}`, {
       method: 'patch',
       json: {
@@ -523,7 +547,7 @@ export class BlackbaudSkyApi {
     })
   }
 
-  async createGift(giftData: object): Promise<ModifiedResponse> {
+  async createGift(giftData: Gift): Promise<ModifiedResponse> {
     return this.request(`${SKY_API_GIFTS_URL}/gifts`, {
       method: 'post',
       json: giftData
