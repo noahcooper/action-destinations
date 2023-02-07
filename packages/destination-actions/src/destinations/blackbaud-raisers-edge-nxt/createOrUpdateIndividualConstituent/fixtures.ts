@@ -87,7 +87,7 @@ export const constituentPayload = {
     address_lines: 'PO Box 963',
     city: 'New York City',
     state: 'NY',
-    postal_code: '10108',
+    postalCode: '10108',
     type: 'Home'
   },
   email: {
@@ -133,7 +133,7 @@ export const addressPayloadUpdated = {
   address_lines: '11 Wall St',
   city: 'New York',
   state: 'NY',
-  postal_code: '10005',
+  postalCode: '10005',
   type: 'Work'
 }
 
@@ -141,7 +141,7 @@ export const addressPayloadWithUpdatedStreet = {
   address_lines: '11 Wall Street',
   city: 'New York',
   state: 'NY',
-  postal_code: '10005',
+  postalCode: '10005',
   type: 'Work'
 }
 

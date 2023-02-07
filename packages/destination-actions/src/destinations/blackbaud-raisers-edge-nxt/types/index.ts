@@ -2,6 +2,10 @@ export interface RefreshTokenResponse {
   access_token: string
 }
 
+export interface StringIndexedObject {
+  [key: string]: any
+}
+
 export interface ExistingConstituentResult {
   id: string | undefined
 }
@@ -43,6 +47,11 @@ export interface Address {
   primary?: boolean
   state?: string
   type: string
+  inactive?: boolean
+}
+
+export interface ExistingAddress extends Address {
+  id: string
 }
 
 export interface Email {
@@ -50,12 +59,22 @@ export interface Email {
   do_not_email?: boolean
   primary?: boolean
   type: string
+  inactive?: boolean
+}
+
+export interface ExistingEmail extends Email {
+  id: string
 }
 
 export interface OnlinePresence {
   address: string
   primary?: boolean
   type: string
+  inactive?: boolean
+}
+
+export interface ExistingOnlinePresence extends OnlinePresence {
+  id: string
 }
 
 export interface Phone {
@@ -63,6 +82,11 @@ export interface Phone {
   number: string
   primary?: boolean
   type: string
+  inactive?: boolean
+}
+
+export interface ExistingPhone extends Phone {
+  id: string
 }
 
 export interface Gift {

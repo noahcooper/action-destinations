@@ -1,10 +1,20 @@
-import { Address, Constituent, Email, Gift, GiftAcknowledgement, GiftReceipt, OnlinePresence, Phone } from '../types'
+import {
+  Address,
+  Constituent,
+  Email,
+  Gift,
+  GiftAcknowledgement,
+  GiftReceipt,
+  OnlinePresence,
+  Phone,
+  StringIndexedObject
+} from '../types'
 import { Payload as CreateOrUpdateIndividualConstituentPayload } from '../createOrUpdateIndividualConstituent/generated-types'
 import { Payload as CreateGiftPayload } from '../createGift/generated-types'
 
 export const dateStringToFuzzyDate = (dateString: string | number) => {
   const date = new Date(dateString)
-  if (isNaN(date)) {
+  if (isNaN(date.getTime())) {
     // invalid date object
     return false
   } else {
@@ -177,10 +187,14 @@ export const buildGiftDataFromPayload = (constituentId: string, payload: CreateG
   return giftData
 }
 
-export const filterObjectListByMatchFields = (list: object[], data: object, matchFields: string[]) => {
-  return list.find((item: object) => {
-    let isMatch = undefined
-    matchFields.forEach((field) => {
+export const filterObjectListByMatchFields = (
+  list: StringIndexedObject[],
+  data: StringIndexedObject,
+  matchFields: string[]
+) => {
+  return list.find((item: StringIndexedObject) => {
+    let isMatch: boolean | undefined = undefined
+    matchFields.forEach((field: string) => {
       if (isMatch !== false) {
         let fieldName = field
         if (field.startsWith('int:')) {
