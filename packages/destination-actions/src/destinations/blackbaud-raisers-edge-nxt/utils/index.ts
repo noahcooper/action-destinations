@@ -182,7 +182,13 @@ export const buildGiftDataFromPayload = (constituentId: string, payload: CreateG
 
   // fields for recurring gifts
   if (giftData.type === 'RecurringGift') {
-    giftData.recurring_gift_schedule = payload.recurring_gift_schedule
+    if (payload.recurring_gift_schedule) {
+      giftData.recurring_gift_schedule = {
+        end_date: payload.recurring_gift_schedule.end_date,
+        frequency: payload.recurring_gift_schedule.frequency || '',
+        start_date: payload.recurring_gift_schedule.start_date || ''
+      }
+    }
   } else if (giftData.type === 'RecurringGiftPayment' && payload.linked_gifts) {
     giftData.linked_gifts = payload.linked_gifts.split(',')
   }
