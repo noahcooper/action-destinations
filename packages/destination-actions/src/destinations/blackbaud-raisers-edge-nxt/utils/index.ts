@@ -80,17 +80,17 @@ export const splitConstituentPayload = (payload: CreateOrUpdateIndividualConstit
   return [constituentData, addressData, emailData, onlinePresenceData, phoneData]
 }
 
-export const buildConstituentPayloadFromGiftPayload = (payload: CreateGiftPayload) => {
+export const buildConstituentPayloadFromGiftPayload = (giftPayload: CreateGiftPayload) => {
   // check if request includes fields to create or update a constituent
   // if so, append them to a new payload
   const constituentPayload = {}
-  Object.keys(payload).forEach((key: string) => {
+  Object.keys(giftPayload).forEach((key: string) => {
     if (key.startsWith('constituent_')) {
       // only append non-empty fields/objects
-      if (payload[key] && (typeof payload[key] !== 'object' || Object.keys(payload[key]).length > 0)) {
+      if (giftPayload[key] && (typeof giftPayload[key] !== 'object' || Object.keys(giftPayload[key]).length > 0)) {
         const excludedConstituentFields = ['constituent_id', 'constituent_lookup_id']
         if (!excludedConstituentFields.includes(key)) {
-          constituentPayload[key.substring('constituent_'.length)] = payload[key]
+          constituentPayload[key.substring('constituent_'.length)] = giftPayload[key]
         }
       }
     }
