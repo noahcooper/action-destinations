@@ -184,7 +184,7 @@ export const buildGiftDataFromPayload = (constituentId: string, payload: CreateG
   if (giftData.type === 'RecurringGift') {
     giftData.recurring_gift_schedule = payload.recurring_gift_schedule
   } else if (giftData.type === 'RecurringGiftPayment' && payload.linked_gifts) {
-    giftData.linked_gifts = [payload.linked_gifts.split(',')]
+    giftData.linked_gifts = payload.linked_gifts.split(',')
   }
 
   return giftData
