@@ -141,7 +141,7 @@ export const buildGiftDataFromPayload = (constituentId: string, payload: CreateG
   // create gift splits array
   giftData.gift_splits = [
     {
-      amount: giftData.amount,
+      amount: payload.amount,
       fund_id: payload.fund_id
     }
   ]
