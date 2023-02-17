@@ -61,11 +61,6 @@ const fields: Record<string, InputField> = {
     description: 'The check number.',
     type: 'string'
   },
-  constituent_id: {
-    label: 'Constituent ID',
-    description: 'The ID of the constituent associated with the gift.',
-    type: 'string'
-  },
   date: {
     label: 'Gift Date',
     description: 'The gift date in ISO-8601 format.',
@@ -185,9 +180,15 @@ const fields: Record<string, InputField> = {
 }
 
 Object.keys(createOrUpdateIndividualConstituentFields).forEach((key: string) => {
-  fields['constituent_' + key] = {
+  let fieldKey = 'constituent_' + key
+  let fieldLabel = 'Constituent ' + createOrUpdateIndividualConstituentFields[key].label
+  if (key === 'constituent_id') {
+    fieldKey = key
+    fieldLabel = createOrUpdateIndividualConstituentFields[key].label
+  }
+  fields[fieldKey] = {
     ...createOrUpdateIndividualConstituentFields[key],
-    label: 'Constituent ' + createOrUpdateIndividualConstituentFields[key].label
+    label: fieldLabel
   }
 })
 

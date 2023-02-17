@@ -23,10 +23,6 @@ export interface Payload {
    */
   check_number?: string
   /**
-   * The ID of the constituent associated with the gift.
-   */
-  constituent_id?: string
-  /**
    * The gift date in ISO-8601 format.
    */
   date?: string | number
@@ -102,6 +98,10 @@ export interface Payload {
    * The constituent's birthdate.
    */
   constituent_birthdate?: string | number
+  /**
+   * The ID of the constituent.
+   */
+  constituent_id?: string
   /**
    * The constituent's email address.
    */

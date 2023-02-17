@@ -88,10 +88,11 @@ export const buildConstituentPayloadFromPayload = (payload: StringIndexedObject)
     if (key.startsWith('constituent_')) {
       // only append non-empty fields/objects
       if (payload[key] && (typeof payload[key] !== 'object' || Object.keys(payload[key]).length > 0)) {
-        const excludedConstituentFields = ['constituent_id', 'constituent_lookup_id']
-        if (!excludedConstituentFields.includes(key)) {
-          constituentPayload[key.substring('constituent_'.length)] = payload[key]
+        let constituentPayloadKey = key.substring('constituent_'.length)
+        if (key === 'constituent_id') {
+          constituentPayloadKey = key
         }
+        constituentPayload[constituentPayloadKey] = payload[key]
       }
     }
   })

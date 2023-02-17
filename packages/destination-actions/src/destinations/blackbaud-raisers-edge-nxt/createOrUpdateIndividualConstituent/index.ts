@@ -133,6 +133,11 @@ export const fields: Record<string, InputField> = {
       }
     }
   },
+  constituent_id: {
+    label: 'Constituent ID',
+    description: 'The ID of the constituent.',
+    type: 'string'
+  },
   email: {
     label: 'Email',
     description: "The constituent's email address.",
@@ -236,10 +241,7 @@ export const fields: Record<string, InputField> = {
   lookup_id: {
     label: 'Lookup ID',
     description: 'The organization-defined identifier for the constituent.',
-    type: 'string',
-    default: {
-      '@path': '$.userId'
-    }
+    type: 'string'
   },
   online_presence: {
     label: 'Online Presence',
@@ -323,8 +325,8 @@ export const fields: Record<string, InputField> = {
 export const perform: RequestFn<Settings, Payload> = async (request, { payload }) => {
   const blackbaudSkyApiClient: BlackbaudSkyApi = new BlackbaudSkyApi(request)
 
-  let constituentId = undefined
-  if (payload.email?.address || payload.lookup_id) {
+  let constituentId = payload.constituent_id
+  if (!constituentId && (payload.email?.address || payload.lookup_id)) {
     const getExistingConstituentResponse = await blackbaudSkyApiClient.getExistingConstituent(
       payload.email,
       payload.lookup_id
