@@ -87,7 +87,11 @@ export const buildConstituentPayloadFromPayload = (payload: StringIndexedObject)
   Object.keys(payload).forEach((key: string) => {
     if (key.startsWith('constituent_')) {
       // only append non-empty fields/objects
-      if (payload[key] && (typeof payload[key] !== 'object' || Object.keys(payload[key]).length > 0)) {
+      if (
+        payload[key] &&
+        (typeof payload[key] !== 'object' ||
+          (Object.keys(payload[key]).length > 0 && Object.values(payload[key]).every((x) => !!x)))
+      ) {
         let constituentPayloadKey = key.substring('constituent_'.length)
         if (key === 'constituent_id') {
           constituentPayloadKey = key
