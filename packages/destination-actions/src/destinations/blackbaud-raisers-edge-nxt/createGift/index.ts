@@ -25,8 +25,12 @@ const fields: Record<string, InputField> = {
       }
     },
     default: {
-      date: '',
-      status: ''
+      date: {
+        '@path': '$.properties.acknowledgement.date'
+      },
+      status: {
+        '@path': '$.properties.acknowledgement.status'
+      }
     }
   },
   amount: {
@@ -128,8 +132,12 @@ const fields: Record<string, InputField> = {
       }
     },
     default: {
-      date: '',
-      status: ''
+      date: {
+        '@path': '$.properties.receipt.date'
+      },
+      status: {
+        '@path': '$.properties.receipt.status'
+      }
     }
   },
   recurring_gift_schedule: {
@@ -151,9 +159,15 @@ const fields: Record<string, InputField> = {
       }
     },
     default: {
-      end_date: '',
-      frequency: '',
-      start_date: ''
+      end_date: {
+        '@path': '$.properties.recurring_gift_schedule.end_date'
+      },
+      frequency: {
+        '@path': '$.properties.recurring_gift_schedule.frequency'
+      },
+      start_date: {
+        '@path': '$.properties.recurring_gift_schedule.start_date'
+      }
     }
   },
   subtype: {
