@@ -39,7 +39,6 @@ export const giftPayload = {
     value: 100
   },
   constituent_id: '123',
-  date: new Date().toISOString(),
   gift_splits: [
     {
       amount: {

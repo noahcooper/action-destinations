@@ -1,5 +1,30 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`Testing snapshot for actions-blackbaud-raisers-edge-nxt destination: createGift action - required fields 1`] = `
+Object {
+  "amount": Object {
+    "value": -80863111015301.12,
+  },
+  "constituent_id": "D0dEn",
+  "date": "2023-01-01T01:00:00Z",
+  "gift_splits": Array [
+    Object {
+      "amount": Object {
+        "value": -80863111015301.12,
+      },
+      "fund_id": "D0dEn",
+    },
+  ],
+  "is_manual": true,
+  "lookup_id": "D0dEn",
+  "payments": Array [
+    Object {
+      "payment_method": "D0dEn",
+    },
+  ],
+}
+`;
+
 exports[`Testing snapshot for actions-blackbaud-raisers-edge-nxt destination: createOrUpdateIndividualConstituent action - all fields 1`] = `""`;
 
 exports[`Testing snapshot for actions-blackbaud-raisers-edge-nxt destination: createOrUpdateIndividualConstituent action - required fields 1`] = `""`;

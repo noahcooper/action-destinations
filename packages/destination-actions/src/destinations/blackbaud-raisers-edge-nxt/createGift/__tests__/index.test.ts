@@ -2,32 +2,27 @@ import nock from 'nock'
 import { createTestEvent, createTestIntegration, IntegrationError } from '@segment/actions-core'
 import Destination from '../../index'
 import { SKY_API_CONSTITUENT_URL, SKY_API_GIFTS_URL } from '../../constants'
-import {
-  constituentPayload,
-  giftPayload,
-  trackEventData,
-  trackEventDataNewConstituent,
-  trackEventDataNoConstituent
-} from '../fixtures'
+import { trackEventData, trackEventDataNewConstituent, trackEventDataNoConstituent } from '../fixtures'
 
 const testDestination = createTestIntegration(Destination)
 
 const mapping = {
-  properties: {
-    constituent_email: {
-      type: {
-        '@path': '$.traits.emailType'
-      }
+  constituent_email: {
+    address: {
+      '@path': '$.properties.email'
     },
-    constituent_id: {
-      '@path': '$.properties.constituentId'
-    },
-    fund_id: {
-      '@path': '$.properties.fundId'
-    },
-    payment_method: {
-      '@path': '$.properties.paymentMethod'
+    type: {
+      '@path': '$.properties.emailType'
     }
+  },
+  constituent_id: {
+    '@path': '$.properties.constituentId'
+  },
+  fund_id: {
+    '@path': '$.properties.fundId'
+  },
+  payment_method: {
+    '@path': '$.properties.paymentMethod'
   }
 }
 
@@ -35,7 +30,7 @@ describe('BlackbaudRaisersEdgeNxt.createGift', () => {
   test('should create a new gift successfully', async () => {
     const event = createTestEvent(trackEventData)
 
-    nock(SKY_API_GIFTS_URL).post('/gifts', giftPayload).reply(200, {
+    nock(SKY_API_GIFTS_URL).post('/gifts').reply(200, {
       id: '1000'
     })
 
@@ -58,11 +53,11 @@ describe('BlackbaudRaisersEdgeNxt.createGift', () => {
         value: []
       })
 
-    nock(SKY_API_CONSTITUENT_URL).post('/constituents', constituentPayload).reply(200, {
+    nock(SKY_API_CONSTITUENT_URL).post('/constituents').reply(200, {
       id: '456'
     })
 
-    nock(SKY_API_GIFTS_URL).post('/gifts', giftPayload).reply(200, {
+    nock(SKY_API_GIFTS_URL).post('/gifts').reply(200, {
       id: '1001'
     })
 
