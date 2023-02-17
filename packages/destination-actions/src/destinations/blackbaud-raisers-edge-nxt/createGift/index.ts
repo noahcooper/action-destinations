@@ -6,8 +6,8 @@ import {
   perform as performCreateOrUpdateIndividualConstituent
 } from '../createOrUpdateIndividualConstituent'
 import { BlackbaudSkyApi } from '../api'
-import { Gift } from '../types'
-import { buildConstituentPayloadFromGiftPayload, buildGiftDataFromPayload } from '../utils'
+import { Gift, StringIndexedObject } from '../types'
+import { buildConstituentPayloadFromPayload, buildGiftDataFromPayload } from '../utils'
 
 const fields: Record<string, InputField> = {
   acknowledgement: {
@@ -178,7 +178,7 @@ Object.keys(createOrUpdateIndividualConstituentFields).forEach((key: string) => 
 })
 
 const perform: RequestFn<Settings, Payload> = async (request, { settings, payload }) => {
-  const constituentPayload = buildConstituentPayloadFromGiftPayload(payload)
+  const constituentPayload = buildConstituentPayloadFromPayload(payload as StringIndexedObject)
 
   let constituentId = payload.constituent_id
   if (Object.keys(constituentPayload).length > 0) {
