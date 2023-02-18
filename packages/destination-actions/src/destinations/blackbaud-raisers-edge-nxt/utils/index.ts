@@ -1,3 +1,4 @@
+import { InputField } from '@segment/actions-core'
 import {
   Address,
   Constituent,
@@ -10,9 +11,10 @@ import {
   Phone,
   StringIndexedObject
 } from '../types'
-import { Payload as CreateGiftPayload } from '../createGift/generated-types'
 import { Payload as CreateConstituentAction } from '../createConstituentAction/generated-types'
+import { Payload as CreateGiftPayload } from '../createGift/generated-types'
 import { Payload as CreateOrUpdateIndividualConstituentPayload } from '../createOrUpdateIndividualConstituent/generated-types'
+import { fields as createOrUpdateIndividualConstituentFields } from '../createOrUpdateIndividualConstituent'
 
 export const dateStringToFuzzyDate = (dateString: string | number) => {
   const date = new Date(dateString)
@@ -29,6 +31,22 @@ export const dateStringToFuzzyDate = (dateString: string | number) => {
       y: date.getFullYear().toString()
     }
   }
+}
+
+export const augmentFieldsWithConstituentFields = (fields: Record<string, InputField>) => {
+  Object.keys(createOrUpdateIndividualConstituentFields).forEach((key: string) => {
+    let fieldKey = 'constituent_' + key
+    let fieldLabel = 'Constituent ' + createOrUpdateIndividualConstituentFields[key].label
+    if (key === 'constituent_id') {
+      fieldKey = key
+      fieldLabel = createOrUpdateIndividualConstituentFields[key].label
+    }
+    fields[fieldKey] = {
+      ...createOrUpdateIndividualConstituentFields[key],
+      label: fieldLabel
+    }
+  })
+  return fields
 }
 
 export const splitConstituentPayload = (payload: CreateOrUpdateIndividualConstituentPayload) => {
