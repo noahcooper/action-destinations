@@ -1,6 +1,7 @@
 import {
   Address,
   Constituent,
+  ConstituentAction,
   Email,
   Gift,
   GiftAcknowledgement,
@@ -11,6 +12,7 @@ import {
 } from '../types'
 import { Payload as CreateOrUpdateIndividualConstituentPayload } from '../createOrUpdateIndividualConstituent/generated-types'
 import { Payload as CreateGiftPayload } from '../createGift/generated-types'
+import { Payload as CreateConstituentAction } from '../createConstituentAction/generated-types'
 
 export const dateStringToFuzzyDate = (dateString: string | number) => {
   const date = new Date(dateString)
@@ -199,6 +201,41 @@ export const buildGiftDataFromPayload = (constituentId: string, payload: CreateG
   }
 
   return giftData
+}
+
+export const buildConstituentActionDataFromPayload = (constituentId: string, payload: CreateConstituentAction) => {
+  // data for constituent action call
+  const constituentActionData: Partial<ConstituentAction> = {
+    constituent_id: constituentId,
+    date: payload.date,
+    category: payload.category,
+    completed: payload.completed,
+    completed_date: payload.completed_date,
+    description: payload.description,
+    direction: payload.direction,
+    end_time: payload.end_time,
+    location: payload.location,
+    opportunity_id: payload.opportunity_id,
+    outcome: payload.outcome,
+    priority: payload.priority,
+    start_time: payload.start_time,
+    status: payload.status,
+    summary: payload.summary,
+    type: payload.type,
+    author: payload.author
+  }
+  Object.keys(constituentActionData).forEach((key) => {
+    if (!constituentActionData[key as keyof ConstituentAction]) {
+      delete constituentActionData[key as keyof ConstituentAction]
+    }
+  })
+
+  // create fundraisers array
+  if (payload.fundraisers) {
+    constituentActionData.fundraisers = payload.fundraisers.split(',')
+  }
+
+  return constituentActionData
 }
 
 export const filterObjectListByMatchFields = (

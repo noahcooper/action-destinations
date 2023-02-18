@@ -5,6 +5,8 @@ import { RefreshTokenResponse } from './types'
 import createGift from './createGift'
 import createOrUpdateIndividualConstituent from './createOrUpdateIndividualConstituent'
 
+import createConstituentAction from './createConstituentAction'
+
 const destination: DestinationDefinition<Settings> = {
   name: "Blackbaud Raiser's Edge NXT",
   slug: 'actions-blackbaud-raisers-edge-nxt',
@@ -56,7 +58,8 @@ const destination: DestinationDefinition<Settings> = {
 
   actions: {
     createGift,
-    createOrUpdateIndividualConstituent
+    createOrUpdateIndividualConstituent,
+    createConstituentAction
   }
 }
 
