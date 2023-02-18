@@ -2,10 +2,6 @@
 
 export interface Payload {
   /**
-   * The ID of the constituent.
-   */
-  constituent_id?: string
-  /**
    * The action date in ISO-8601 format.
    */
   date: string | number
@@ -90,6 +86,10 @@ export interface Payload {
    * The constituent's birthdate.
    */
   constituent_birthdate?: string | number
+  /**
+   * The ID of the constituent.
+   */
+  constituent_id?: string
   /**
    * The constituent's email address.
    */

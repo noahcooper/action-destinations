@@ -10,11 +10,6 @@ import { ConstituentAction, StringIndexedObject } from '../types'
 import { buildConstituentActionDataFromPayload, buildConstituentPayloadFromPayload } from '../utils'
 
 const fields: Record<string, InputField> = {
-  constituent_id: {
-    label: 'Constituent ID',
-    description: 'The ID of the constituent associated with the action.',
-    type: 'string'
-  },
   date: {
     label: 'Date',
     description: 'The action date in ISO-8601 format.',
