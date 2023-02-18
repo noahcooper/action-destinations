@@ -10,9 +10,9 @@ import {
   Phone,
   StringIndexedObject
 } from '../types'
-import { Payload as CreateOrUpdateIndividualConstituentPayload } from '../createOrUpdateIndividualConstituent/generated-types'
 import { Payload as CreateGiftPayload } from '../createGift/generated-types'
 import { Payload as CreateConstituentAction } from '../createConstituentAction/generated-types'
+import { Payload as CreateOrUpdateIndividualConstituentPayload } from '../createOrUpdateIndividualConstituent/generated-types'
 
 export const dateStringToFuzzyDate = (dateString: string | number) => {
   const date = new Date(dateString)
