@@ -237,6 +237,7 @@ export const buildConstituentActionDataFromPayload = (constituentId: string, pay
     description: payload.description,
     direction: payload.direction,
     end_time: payload.end_time,
+    fundraisers: payload.fundraisers,
     location: payload.location,
     opportunity_id: payload.opportunity_id,
     outcome: payload.outcome,
@@ -252,11 +253,6 @@ export const buildConstituentActionDataFromPayload = (constituentId: string, pay
       delete constituentActionData[key as keyof ConstituentAction]
     }
   })
-
-  // create fundraisers array
-  if (payload.fundraisers) {
-    constituentActionData.fundraisers = payload.fundraisers.split(',')
-  }
 
   return constituentActionData
 }

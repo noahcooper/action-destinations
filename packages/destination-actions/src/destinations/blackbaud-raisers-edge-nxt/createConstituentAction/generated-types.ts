@@ -26,13 +26,13 @@ export interface Payload {
    */
   direction?: string
   /**
-   * The end time of the action. Uses 24-hour time in the HH:mm format.
+   * The end time of the action. Uses 24-hour time in the HH:mm format. For example, 17:30 represents 5:30 p.m.
    */
   end_time?: string
   /**
    * The set of immutable constituent system record IDs for the fundraisers associated with the action.
    */
-  fundraisers?: string
+  fundraisers?: string[]
   /**
    * The location of the action. Available values are the entries in the Action Locations table.
    */
@@ -50,7 +50,7 @@ export interface Payload {
    */
   priority?: string
   /**
-   * The start time of the action. Uses 24-hour time in the HH:mm format.
+   * The start time of the action. Uses 24-hour time in the HH:mm format. For example, 17:30 represents 5:30 p.m.
    */
   start_time?: string
   /**

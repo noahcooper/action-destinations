@@ -25,7 +25,14 @@ const fields: Record<string, InputField> = augmentFieldsWithConstituentFields({
     description:
       'The channel or intent of the constituent interaction. Available values are Phone Call, Meeting, Mailing, Email, and Task/Other.',
     type: 'string',
-    required: true
+    required: true,
+    choices: [
+      { label: 'Phone Call', value: 'Phone Call' },
+      { label: 'Meeting', value: 'Meeting' },
+      { label: 'Mailing', value: 'Mailing' },
+      { label: 'Email', value: 'Email' },
+      { label: 'Task/Other', value: 'Task/Other' }
+    ]
   },
   completed: {
     label: 'Completed',
@@ -46,17 +53,22 @@ const fields: Record<string, InputField> = augmentFieldsWithConstituentFields({
     label: 'Direction',
     description: 'The direction of the action. Available values are "Inbound" and "Outbound". The default is Inbound.',
     type: 'string',
-    default: 'Inbound'
+    default: 'Inbound',
+    choices: [
+      { label: 'Inbound', value: 'Inbound' },
+      { label: 'Outbound', value: 'Outbound' }
+    ]
   },
   end_time: {
     label: 'End Time',
-    description: 'The end time of the action. Uses 24-hour time in the HH:mm format.',
+    description: 'The end time of the action. Uses 24-hour time in the HH:mm format. For example, 17:30 represents 5:30 p.m.',
     type: 'string'
   },
   fundraisers: {
     label: 'Fundraisers',
     description: 'The set of immutable constituent system record IDs for the fundraisers associated with the action.',
-    type: 'string'
+    type: 'string',
+    multiple: true
   },
   location: {
     label: 'Location',
@@ -71,17 +83,26 @@ const fields: Record<string, InputField> = augmentFieldsWithConstituentFields({
   outcome: {
     label: 'Outcome',
     description: 'The outcome of the action. Available values are Successful and Unsuccessful.',
-    type: 'string'
+    type: 'string',
+    choices: [
+      { label: 'Successful', value: 'Successful' },
+      { label: 'Unsuccessful', value: 'Unsuccessful' }
+    ]
   },
   priority: {
     label: 'Priority',
     description: 'The priority of the action. Available values are Normal, High, and Low. The default is Normal.',
     type: 'string',
-    default: 'Normal'
+    default: 'Normal',
+    choices: [
+      { label: 'High', value: 'High' },
+      { label: 'Low', value: 'Low' },
+      { label: 'Normal', value: 'Normal' }
+    ]
   },
   start_time: {
     label: 'Start Time',
-    description: 'The start time of the action. Uses 24-hour time in the HH:mm format.',
+    description: 'The start time of the action. Uses 24-hour time in the HH:mm format. For example, 17:30 represents 5:30 p.m.',
     type: 'string'
   },
   status: {
