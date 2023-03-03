@@ -1,15 +1,16 @@
 import { ActionDefinition, ExecuteInput, InputField, IntegrationError, RequestFn } from '@segment/actions-core'
 import type { Settings } from '../generated-types'
 import type { Payload } from '../createConstituentAction/generated-types'
-import {
-  fields as createOrUpdateIndividualConstituentFields,
-  perform as performCreateOrUpdateIndividualConstituent
-} from '../createOrUpdateIndividualConstituent'
+import { perform as performCreateOrUpdateIndividualConstituent } from '../createOrUpdateIndividualConstituent'
 import { BlackbaudSkyApi } from '../api'
 import { ConstituentAction, StringIndexedObject } from '../types'
-import { buildConstituentActionDataFromPayload, buildConstituentPayloadFromPayload } from '../utils'
+import {
+  augmentFieldsWithConstituentFields,
+  buildConstituentActionDataFromPayload,
+  buildConstituentPayloadFromPayload
+} from '../utils'
 
-const fields: Record<string, InputField> = {
+const fields: Record<string, InputField> = augmentFieldsWithConstituentFields({
   date: {
     label: 'Date',
     description: 'The action date in ISO-8601 format.',
@@ -105,19 +106,6 @@ const fields: Record<string, InputField> = {
     description:
       "The author of the action's summary and description. If not supplied, will have a default set based on the user's account. Character limit: 50.",
     type: 'string'
-  }
-}
-
-Object.keys(createOrUpdateIndividualConstituentFields).forEach((key: string) => {
-  let fieldKey = 'constituent_' + key
-  let fieldLabel = 'Constituent ' + createOrUpdateIndividualConstituentFields[key].label
-  if (key === 'constituent_id') {
-    fieldKey = key
-    fieldLabel = createOrUpdateIndividualConstituentFields[key].label
-  }
-  fields[fieldKey] = {
-    ...createOrUpdateIndividualConstituentFields[key],
-    label: fieldLabel
   }
 })
 
