@@ -131,7 +131,6 @@ const fields: Record<string, InputField> = augmentFieldsWithConstituentFields({
 })
 
 const perform: RequestFn<Settings, Payload> = async (request, { settings, payload }) => {
-  // Refactor this into a method that createGift can use as well
   const constituentPayload = buildConstituentPayloadFromPayload(payload as StringIndexedObject)
 
   let constituentId = payload.constituent_id
