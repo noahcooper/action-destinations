@@ -23,7 +23,6 @@ const destination: DestinationDefinition<Settings> = {
       return request(`${SKY_API_BASE_URL}/emailaddresstypes`)
     },
     refreshAccessToken: async (request, { auth }) => {
-      // Return a request that refreshes the access_token if the API supports it
       const res = await request<RefreshTokenResponse>(SKY_OAUTH2_TOKEN_URL, {
         method: 'POST',
         body: new URLSearchParams({
@@ -34,7 +33,7 @@ const destination: DestinationDefinition<Settings> = {
         })
       })
 
-      return { accessToken: res.data.access_token }
+      return { accessToken: res.data.access_token, refreshToken: res.data.refresh_token }
     }
   },
   extendRequest({ auth, settings }) {
@@ -44,13 +43,6 @@ const destination: DestinationDefinition<Settings> = {
         'Bb-Api-Subscription-Key': `${settings.bbApiSubscriptionKey}`
       }
     }
-  },
-
-  //onDelete: async (request, { settings, payload }) => {
-  onDelete: async () => {
-    // Return a request that performs a GDPR delete for the provided Segment userId or anonymousId
-    // provided in the payload. If your destination does not support GDPR deletion you should not
-    // implement this function and should remove it completely.
   },
 
   actions: {
